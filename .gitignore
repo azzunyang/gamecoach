@@ -1,5 +1,18 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Secrets
+.env.local
+.env*.local
+
+# Hardhat
+artifacts/
+cache/
+typechain-types/
+
+# Cloudflare
+.vercel/
+.wrangler/
+
 # dependencies
 /node_modules
 /.pnp
