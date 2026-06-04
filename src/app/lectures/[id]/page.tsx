@@ -259,7 +259,6 @@ export default function LectureDetailPage() {
             level={lecture.level}
             price={lecture.price_eth}
             duration={lecture.duration}
-            height={220}
           />
         </div>
 
