@@ -20,14 +20,21 @@ export async function GET(req: NextRequest) {
   const field = session.role === "coach" ? "coach_id" : "student_id";
   const lessons = await d1.prepare(
     `SELECT l.*,
-      cu.nickname as coach_nickname, su.nickname as student_nickname,
-      c.game_category, c.tier
+      cu.nickname AS coach,
+      su.nickname AS student,
+      c.game_category AS game,
+      c.session_min  AS session,
+      0              AS coachAvi,
+      0              AS studentAvi,
+      COALESCE(s.date || ' ' || s.start_time, '') AS slot,
+      (CAST(l.deposit_eth AS REAL) + CAST(l.balance_eth AS REAL)) AS price
      FROM lessons l
-     JOIN coaches c ON c.id = l.coach_id
-     JOIN users cu ON cu.id = c.id
-     JOIN users su ON su.id = l.student_id
+     JOIN coaches c  ON c.id = l.coach_id
+     JOIN users  cu  ON cu.id = c.id
+     JOIN users  su  ON su.id = l.student_id
+     LEFT JOIN slots s ON s.id = l.slot_id
      WHERE l.${field} = ? ORDER BY l.created_at DESC`
-  ).bind(session.role === "coach" ? session.userId : session.userId).all();
+  ).bind(session.userId).all();
 
   return NextResponse.json({ lessons: lessons.results });
 }

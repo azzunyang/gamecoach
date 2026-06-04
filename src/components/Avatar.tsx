@@ -16,7 +16,8 @@ interface AvatarProps {
 
 export default function Avatar({ name, idx = 0, size = 44, square = false, online }: AvatarProps) {
   const bg = AV_COLORS[Math.abs(idx) % AV_COLORS.length];
-  const initials = name
+  const safeName = name || "?";
+  const initials = safeName
     .split(" ")
     .map((w) => w[0])
     .join("")
