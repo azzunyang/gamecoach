@@ -83,7 +83,6 @@ function LessonCard({ l }: { l: typeof LESSONS[0] }) {
           coachName={l.coach}
           price={String(l.price)}
           duration={l.duration}
-          height={150}
         />
       </div>
     </Link>
@@ -297,7 +296,6 @@ export default function LandingPage() {
                           level={l.level}
                           price={l.price_eth}
                           duration={l.duration}
-                          height={160}
                         />
                       </div>
                     </Link>
