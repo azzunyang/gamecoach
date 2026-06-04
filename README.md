@@ -17,50 +17,73 @@
 |------|------|
 | `/` | 랜딩 — 서브 네비, 히어로 배너(텍스트만), 게임 카테고리 아이콘 필터, 코치 카드(12명), 강의 목록(8개) |
 | `/coaches` | 코치 목록 (카테고리 필터, 검색, 썸네일 카드) |
-| `/coaches/[id]` | 코치 상세 + 수업 신청 모달 (3단계: 일정→수업안내→결제) |
+| `/coaches/[id]` | 코치 상세 + 진행 중인 강의 목록 + 수업 신청 모달 |
 | `/auth/login` | MetaMask 지갑 로그인 |
 | `/auth/register` | MetaMask 지갑 회원가입 (역할 선택만 — 상세 프로필은 다음 단계) |
 | `/profile/setup` | 회원가입 직후 프로필 설정 (닉네임·자기소개·게임·티어·가격 등) |
-| `/dashboard/coach` | 코치 대시보드 (수업 관리, 슬롯, 프로필) |
-| `/dashboard/student` | 수강생 대시보드 (수업 내역, 찜 목록) |
+| `/dashboard/coach` | 코치 대시보드 (수업 관리, 슬롯, 프로필, 강의 관리) |
+| `/dashboard/coach/lectures` | 코치 강의 목록 관리 (공개/비공개, 삭제) |
+| `/dashboard/coach/lectures/new` | 새 강의 등록 |
+| `/dashboard/student` | 수강생 대시보드 (수업 내역, 코치 찜, 강의 찜, 회원 탈퇴) |
 | `/chat/[lessonId]` | 코치↔수강생 채팅 |
 | `/review/[lessonId]` | 수업 리뷰 작성 (별점 4항목 + 텍스트) |
+| `/admin` | 관리자 대시보드 (통계) |
+| `/admin/users` | 회원 관리 (검색, 관리자 지정, 삭제) |
+| `/admin/coaches` | 코치 관리 (티어 인증, 정지/복구) |
+| `/admin/reports` | 신고 관리 (티어 신고 처리) |
 
 ## API 라우트
 
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | GET | `/api/auth/nonce` | 지갑 서명용 nonce 발급 (5분 유효) |
-| POST | `/api/auth/wallet` | MetaMask 서명 검증 → 로그인/회원가입. role 포함 시 회원가입, 미포함 시 로그인 |
-| GET | `/api/auth/me` | 현재 세션 유저 조회 |
+| POST | `/api/auth/wallet` | MetaMask 서명 검증 → 로그인/회원가입 (ADMIN_WALLET 지갑은 자동 admin 지정) |
+| GET | `/api/auth/me` | 현재 세션 유저 조회 (is_admin 포함) |
 | POST | `/api/auth/logout` | 로그아웃 |
-| GET | `/api/auth/discord` | Discord OAuth 시작 (마이페이지 연동용) |
-| GET | `/api/auth/discord/callback` | Discord OAuth 콜백 |
-| PATCH | `/api/profile` | 프로필 저장 (닉네임·자기소개·게임·티어·가격·세션시간) |
+| PATCH | `/api/profile` | 프로필 저장 |
 | GET | `/api/coaches` | 코치 목록 조회 (카테고리·검색·페이지) |
 | GET/PATCH | `/api/coaches/[id]` | 코치 상세 조회 / 프로필 수정 |
 | GET/POST/DELETE | `/api/coaches/[id]/slots` | 슬롯 조회 / 추가 / 삭제 |
+| GET/POST | `/api/lectures` | 강의 목록 조회 / 코치 등록 (q·category·coach_id 파라미터) |
+| GET/PATCH/DELETE | `/api/lectures/[id]` | 강의 상세 / 수정 / 삭제 |
+| GET/POST/DELETE | `/api/wishlist/lectures` | 강의 찜 목록 / 추가 / 제거 |
 | GET/POST | `/api/lessons` | 수업 목록 / 신청 |
 | GET/PATCH | `/api/lessons/[id]` | 수업 상세 / 상태 변경 |
 | GET/POST | `/api/messages/[lessonId]` | 채팅 메시지 조회 / 전송 |
 | POST | `/api/reviews` | 리뷰 작성 |
+| DELETE | `/api/user/delete` | 회원 탈퇴 (진행 중 수업 있으면 409) |
+| GET | `/api/admin/stats` | 관리자 전체 통계 |
+| GET | `/api/admin/users` | 전체 회원 목록 (관리자 전용) |
+| PATCH/DELETE | `/api/admin/users/[id]` | 회원 관리자 지정·해제 / 삭제 |
+| GET | `/api/admin/coaches` | 코치 목록 (관리자 전용, 인증 필터) |
+| PATCH | `/api/admin/coaches/[id]` | 티어 인증 / 코치 정지·복구 |
+| GET | `/api/admin/reports` | 신고 목록 (관리자 전용) |
+| PATCH | `/api/admin/reports/[id]` | 신고 처리 (티어 인증 연동 가능) |
 
 ## 인증 흐름
 
 ```
-회원가입: 역할 선택 → MetaMask 연결 → 서명 → /profile/setup
-로그인:   MetaMask 연결 → 서명 → 홈
+회원가입: 역할 선택 → Discord OAuth → 콜백: DB 유저 생성 + 세션 → /profile/setup
+로그인:   Discord OAuth → 콜백: 기존 유저 조회 + 세션 → 대시보드
 ```
 
-- EIP-191 `personal_sign` 사용. 서버에서 `@noble/curves/secp256k1`로 서명 검증
-- 같은 지갑으로 재가입 시 역할 변경 가능 (자동 업데이트)
-- 전화번호·Discord 연동은 마이페이지에서 추후 설정
+- Discord OAuth2 (`identify` scope) 기반 인증
+- `state` 파라미터에 `role:intent` 인코딩하여 전달
+- 이미 가입된 Discord 계정으로 가입 시도 → 자동 로그인 처리
+- MetaMask는 수업 신청 시 에스크로 결제에서만 사용 (인증과 분리)
+- 비로그인 사용자도 코치 목록·프로필·강의 열람 가능
 
 ## 수업 신청 3단계 모달
 
 1. **일정 선택** — 달력에서 날짜 + 시간 선택
 2. **수업 안내** — 커리큘럼 / 진행 방식 / 예약금·환불 안내
 3. **결제 확인** — 예약금(30%) MetaMask 결제
+
+## 환경 변수 (추가)
+
+| 변수 | 설명 |
+|------|------|
+| `ADMIN_WALLET` | 최초 관리자 지갑 주소 (소문자). 해당 주소로 첫 로그인 시 자동 admin 지정 |
 
 ## DB 스키마 요점
 

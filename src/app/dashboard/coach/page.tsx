@@ -1,46 +1,102 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 
-const MOCK_REQUESTS = [
-  { id:'l1', student:'GamerX99', sAvi:4, game:'League of Legends', tier:'골드', slot:'2026-06-09 18:00', msg:'정글 갱킹 타이밍을 잡는 법을 배우고 싶어요.' },
-  { id:'l2', student:'AimTrainer', sAvi:6, game:'Valorant', tier:'플래티넘', slot:'2026-06-11 14:00', msg:'크로스헤어 배치와 피킹 각도를 교정받고 싶습니다.' },
-  { id:'l3', student:'TopLaner99', sAvi:1, game:'League of Legends', tier:'다이아', slot:'2026-06-13 10:00', msg:'라인전 CS와 포지셔닝 집중 코칭 부탁드립니다.' },
-];
-
-const MOCK_UPCOMING = [
-  { id:'u1', student:'SilverHope', sAvi:0, game:'League of Legends', slot:'2026-06-06 20:00', session:60 },
-  { id:'u2', student:'ValorantPro', sAvi:3, game:'Valorant', slot:'2026-06-07 16:00', session:60 },
-];
+interface LessonRow {
+  id: string;
+  student_id: string;
+  student_nickname: string;
+  coach_id: string;
+  game_category: string;
+  tier: string;
+  state: string;
+  deposit_eth: string;
+  created_at: number;
+  slot_id: string;
+}
 
 interface Me { id: string; address: string; role: string; nickname?: string }
 
+interface Lecture {
+  id: string; title: string; game: string; price_eth: string;
+  duration: number; level: string; is_published: number;
+}
+
 function CoachDashboardContent() {
   const searchParams = useSearchParams();
-  const tabParam = searchParams.get("tab") ?? "dashboard";
-  const [tab, setTab] = useState(tabParam);
+  const router = useRouter();
+  const tab = searchParams.get("tab") ?? "dashboard";
   const [profileOpen, setProfileOpen] = useState(false);
-  const [requests, setRequests] = useState(MOCK_REQUESTS);
+  const [allLessons, setAllLessons] = useState<LessonRow[]>([]);
   const [me, setMe] = useState<Me | null>(null);
+  const [lectures, setLectures] = useState<Lecture[]>([]);
+
+  const loadLessons = () => {
+    fetch("/api/lessons")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => { const data = d as { lessons?: LessonRow[] } | null; if (data?.lessons) setAllLessons(data.lessons); })
+      .catch(() => {});
+  };
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.ok ? r.json() : null)
-      .then((d) => { const m = d as Me | null; if (m?.id) setMe(m); })
+      .then((d) => {
+        const m = d as Me | null;
+        if (m?.id) {
+          setMe(m);
+          fetch(`/api/lectures?coach_id=${m.id}&is_mine=1`)
+            .then((r) => r.ok ? r.json() : null)
+            .then((ld) => { const data = ld as { lectures?: Lecture[] } | null; if (data?.lectures) setLectures(data.lectures); })
+            .catch(() => {});
+        }
+      })
       .catch(() => {});
-    fetch("/api/lessons")
-      .then((r) => r.ok ? r.json() : null)
-      .catch(() => {});
+    loadLessons();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const acceptReq = (id: string) => setRequests((p) => p.filter((r) => r.id !== id));
-  const rejectReq = (id: string) => setRequests((p) => p.filter((r) => r.id !== id));
+  const requests = allLessons.filter((l) => l.state === 'PENDING');
+  const upcoming = allLessons.filter((l) => ['ACCEPTED', 'ACTIVE'].includes(l.state));
+
+  const acceptReq = async (id: string) => {
+    await fetch(`/api/lessons/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: "ACCEPTED" }),
+    });
+    loadLessons();
+  };
+
+  const rejectReq = async (id: string) => {
+    await fetch(`/api/lessons/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state: "REJECTED" }),
+    });
+    loadLessons();
+  };
+
+  const togglePublish = async (lec: Lecture) => {
+    await fetch(`/api/lectures/${lec.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_published: lec.is_published ? 0 : 1 }),
+    });
+    setLectures((prev) => prev.map((l) => l.id === lec.id ? { ...l, is_published: lec.is_published ? 0 : 1 } : l));
+  };
+
+  const deleteLecture = async (id: string) => {
+    if (!confirm("강의를 삭제하시겠습니까?")) return;
+    await fetch(`/api/lectures/${id}`, { method: "DELETE" });
+    setLectures((prev) => prev.filter((l) => l.id !== id));
+  };
 
   return (
     <>
@@ -97,12 +153,13 @@ function CoachDashboardContent() {
           {[
             { id:'dashboard', label:'대시보드' },
             { id:'requests', label:`요청 ${requests.length > 0 ? `(${requests.length})` : ''}` },
+            { id:'lectures', label:'강의 관리' },
             { id:'earnings', label:'수익' },
             { id:'profile', label:'프로필 설정' },
           ].map((t) => (
             <button
               key={t.id}
-              onClick={() => setTab(t.id)}
+              onClick={() => router.push(t.id === 'dashboard' ? '/dashboard/coach' : `/dashboard/coach?tab=${t.id}`)}
               style={{
                 padding:'10px 16px', background:'none', border:'none', cursor:'pointer',
                 fontWeight: tab===t.id ? 700 : 500, fontSize:14,
@@ -140,16 +197,13 @@ function CoachDashboardContent() {
                   {requests.map((req) => (
                     <div key={req.id} className="card card-pad">
                       <div className="row gap-10" style={{ marginBottom:12 }}>
-                        <Avatar name={req.student} idx={req.sAvi} size={36} />
+                        <Avatar name={req.student_nickname || '수강생'} idx={0} size={36} />
                         <div style={{ flex:1 }}>
-                          <div style={{ fontWeight:700 }}>{req.student}</div>
-                          <div style={{ fontSize:12, color:'var(--muted)' }}>{req.game} · {req.tier}</div>
+                          <div style={{ fontWeight:700 }}>{req.student_nickname || '수강생'}</div>
+                          <div style={{ fontSize:12, color:'var(--muted)' }}>{req.game_category} · {new Date(req.created_at * 1000).toLocaleDateString('ko')}</div>
                         </div>
-                        <div style={{ fontSize:12, color:'var(--muted)', whiteSpace:'nowrap' }}>{req.slot}</div>
+                        <div style={{ fontSize:12, color:'var(--muted)', whiteSpace:'nowrap' }}>{req.deposit_eth} ETH</div>
                       </div>
-                      {req.msg && (
-                        <div className="req-msg" style={{ marginBottom:12 }}>{req.msg}</div>
-                      )}
                       <div className="row gap-8">
                         <button className="btn btn-danger btn-sm" onClick={() => rejectReq(req.id)}>거절</button>
                         <button className="btn btn-accent btn-sm" onClick={() => acceptReq(req.id)}>
@@ -165,32 +219,32 @@ function CoachDashboardContent() {
 
             {/* Upcoming sessions */}
             <div>
-              <h2 className="h3" style={{ marginBottom:16 }}>예정된 수업</h2>
-              {MOCK_UPCOMING.length === 0 ? (
+              <h2 className="h3" style={{ marginBottom:16 }}>수락된 수업</h2>
+              {upcoming.length === 0 ? (
                 <div className="card card-pad" style={{ textAlign:'center', color:'var(--muted)', padding:'40px 20px' }}>
                   <div style={{ fontWeight:700 }}>예정된 수업이 없어요</div>
                 </div>
               ) : (
                 <div className="col gap-14">
-                  {MOCK_UPCOMING.map((u) => (
+                  {upcoming.map((u) => (
                     <div key={u.id} className="card card-pad">
                       <div className="row gap-10" style={{ marginBottom:12 }}>
-                        <div style={{ width:44, height:44, borderRadius:'var(--r-sm)', background:'var(--sunken)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, color:'var(--ink-soft)', flexShrink:0 }}>
-                          {u.slot.split('-')[2].split(' ')[0]}
-                          <br/>
-                          <span style={{ fontSize:10, fontWeight:600, color:'var(--muted)' }}>6월</span>
-                        </div>
+                        <Avatar name={u.student_nickname || '수강생'} idx={0} size={40} />
                         <div style={{ flex:1 }}>
-                          <div style={{ fontWeight:700 }}>{u.student}</div>
-                          <div style={{ fontSize:12, color:'var(--muted)' }}>{u.game} · {u.slot.split(' ')[1]} · {u.session}분</div>
+                          <div style={{ fontWeight:700 }}>{u.student_nickname || '수강생'}</div>
+                          <div style={{ fontSize:12, color:'var(--muted)' }}>
+                            {u.game_category} · {new Date(u.created_at * 1000).toLocaleDateString('ko')}
+                          </div>
                         </div>
+                        <span className={`status${u.state === 'ACTIVE' ? ' st-progress' : ' st-accepted'}`}>
+                          {u.state === 'ACTIVE' ? '진행중' : '수락됨'}
+                        </span>
                       </div>
                       <div className="row gap-8">
                         <Link href={`/chat/${u.id}`} className="btn btn-outline btn-sm">
                           <Icon name="chat" size={13} />
                           채팅
                         </Link>
-                        <button className="btn btn-accent btn-sm">수업 시작</button>
                       </div>
                     </div>
                   ))}
@@ -204,16 +258,22 @@ function CoachDashboardContent() {
         {tab === 'requests' && (
           <div className="col gap-14">
             <h2 className="h3" style={{ marginBottom:8 }}>수업 요청 목록</h2>
+            {requests.length === 0 && (
+              <div className="card card-pad" style={{ textAlign:'center', color:'var(--muted)', padding:'60px 20px' }}>
+                대기 중인 요청이 없습니다.
+              </div>
+            )}
             {requests.map((req) => (
               <div key={req.id} className="card card-pad">
                 <div className="row gap-10" style={{ marginBottom:12 }}>
-                  <Avatar name={req.student} idx={req.sAvi} size={40} />
+                  <Avatar name={req.student_nickname || '수강생'} idx={0} size={40} />
                   <div style={{ flex:1 }}>
-                    <div style={{ fontWeight:700 }}>{req.student}</div>
-                    <div style={{ fontSize:12, color:'var(--muted)' }}>{req.game} · {req.tier} · {req.slot}</div>
+                    <div style={{ fontWeight:700 }}>{req.student_nickname || '수강생'}</div>
+                    <div style={{ fontSize:12, color:'var(--muted)' }}>
+                      {req.game_category} · {new Date(req.created_at * 1000).toLocaleDateString('ko')} · {req.deposit_eth} ETH
+                    </div>
                   </div>
                 </div>
-                {req.msg && <div className="req-msg" style={{ marginBottom:12 }}>{req.msg}</div>}
                 <div className="row gap-8">
                   <button className="btn btn-danger btn-sm" onClick={() => rejectReq(req.id)}>거절</button>
                   <button className="btn btn-accent btn-sm" onClick={() => acceptReq(req.id)}>
@@ -226,6 +286,68 @@ function CoachDashboardContent() {
             {requests.length === 0 && (
               <div className="card card-pad" style={{ textAlign:'center', color:'var(--muted)', padding:'60px 20px' }}>
                 대기 중인 요청이 없습니다.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Lectures tab */}
+        {tab === 'lectures' && (
+          <div className="col gap-14">
+            <div className="spread">
+              <h2 className="h3">강의 관리 <span style={{ fontSize:14, color:'var(--muted)', fontWeight:500 }}>{lectures.length}개</span></h2>
+              <Link href="/dashboard/coach/lectures/new" className="btn btn-accent btn-sm">
+                <Icon name="plus" size={14} />
+                새 강의 등록
+              </Link>
+            </div>
+            {lectures.length === 0 ? (
+              <div className="card card-pad" style={{ textAlign:'center', padding:'40px 20px' }}>
+                <Icon name="book" size={32} style={{ margin:'0 auto 12px', display:'block', color:'var(--muted)' }} />
+                <div style={{ fontWeight:700, marginBottom:8 }}>등록된 강의가 없어요</div>
+                <p style={{ color:'var(--muted)', fontSize:14, marginBottom:16 }}>강의를 등록하면 수강생이 찾을 수 있어요</p>
+                <Link href="/dashboard/coach/lectures/new" className="btn btn-accent btn-sm" style={{ display:'inline-flex' }}>
+                  <Icon name="plus" size={14} />
+                  첫 강의 등록하기
+                </Link>
+              </div>
+            ) : (
+              <div className="col gap-10">
+                {lectures.map((lec) => (
+                  <div key={lec.id} className="card card-pad spread">
+                    <div className="row gap-12">
+                      <div style={{ width:42, height:42, borderRadius:'var(--r-sm)', background:'var(--sunken)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                        <Icon name="book" size={20} style={{ color:'var(--muted)' }} />
+                      </div>
+                      <div>
+                        <div style={{ fontWeight:700, marginBottom:4 }}>{lec.title}</div>
+                        <div className="row gap-8">
+                          <span className="badge b-game" style={{ fontSize:11 }}>{lec.game}</span>
+                          <span className="badge" style={{ fontSize:11 }}>{lec.level}</span>
+                          <span style={{ fontSize:12, color:'var(--muted)' }}>{lec.duration}분</span>
+                          <span className="eth-amt" style={{ fontSize:12 }}>{lec.price_eth} ETH</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="row gap-8">
+                      <button
+                        className="btn btn-outline btn-xs"
+                        onClick={() => togglePublish(lec)}
+                        style={{ color: lec.is_published ? 'var(--success)' : 'var(--muted)' }}
+                      >
+                        <Icon name={lec.is_published ? 'check' : 'warn'} size={12} />
+                        {lec.is_published ? '공개중' : '비공개'}
+                      </button>
+                      <button
+                        className="btn btn-xs"
+                        style={{ background:'var(--danger-tint)', color:'var(--danger)', border:'none' }}
+                        onClick={() => deleteLecture(lec.id)}
+                      >
+                        삭제
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -252,15 +374,18 @@ function CoachDashboardContent() {
                 <h3 className="h3">최근 정산 내역</h3>
               </div>
               <div className="col gap-0">
-                {MOCK_UPCOMING.map((u, i) => (
-                  <div key={u.id} style={{ padding:'14px 0', borderBottom: i<MOCK_UPCOMING.length-1 ? '1px solid var(--line)' : 'none' }} className="spread">
+                {allLessons.filter(l => l.state === 'COMPLETED').slice(0, 5).map((u, i, arr) => (
+                  <div key={u.id} style={{ padding:'14px 0', borderBottom: i < arr.length-1 ? '1px solid var(--line)' : 'none' }} className="spread">
                     <div>
-                      <div style={{ fontWeight:600 }}>{u.student}</div>
-                      <div style={{ fontSize:12, color:'var(--muted)' }}>{u.slot} · {u.game}</div>
+                      <div style={{ fontWeight:600 }}>{u.student_nickname || '수강생'}</div>
+                      <div style={{ fontSize:12, color:'var(--muted)' }}>{new Date(u.created_at * 1000).toLocaleDateString('ko')} · {u.game_category}</div>
                     </div>
-                    <span className="eth-amt" style={{ color:'var(--success)', fontWeight:700 }}>+0.04 ETH</span>
+                    <span className="eth-amt" style={{ color:'var(--success)', fontWeight:700 }}>+{u.deposit_eth} ETH</span>
                   </div>
                 ))}
+                {allLessons.filter(l => l.state === 'COMPLETED').length === 0 && (
+                  <div style={{ textAlign:'center', padding:'20px', color:'var(--muted)', fontSize:13 }}>완료된 수업이 없어요</div>
+                )}
               </div>
             </div>
           </div>

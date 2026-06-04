@@ -73,19 +73,16 @@ export default function LoginPage() {
       <TopNav />
       <main style={{ minHeight:'100dvh', display:'flex', alignItems:'center', justifyContent:'center', padding:'calc(var(--nav-h) + 24px) 20px 60px' }}>
         <div className="card" style={{ width:'100%', maxWidth:400, padding:36 }}>
-          {/* Logo */}
           <div style={{ textAlign:'center', marginBottom:32 }}>
             <div style={{ display:'inline-flex', width:56, height:56, borderRadius:16, background:'var(--ink)', alignItems:'center', justifyContent:'center', color:'var(--accent)', fontSize:26, fontWeight:900, marginBottom:12 }}>G</div>
             <h1 style={{ fontSize:22, fontWeight:900, marginBottom:6 }}>MetaMask로 로그인</h1>
             <p style={{ fontSize:14, color:'var(--muted)' }}>연결된 지갑 주소로 간편하게 로그인하세요</p>
           </div>
 
-          {/* MetaMask wallet icon */}
           <div style={{ textAlign:'center', marginBottom:28 }}>
             <div style={{
               display:'inline-flex', width:80, height:80, borderRadius:20,
-              background:'var(--ink)',
-              alignItems:'center', justifyContent:'center', fontSize:40,
+              background:'var(--ink)', alignItems:'center', justifyContent:'center', fontSize:40,
             }}>
               🦊
             </div>
@@ -136,11 +133,10 @@ export default function LoginPage() {
 
           <div className="notice" style={{ marginBottom:20 }}>
             <Icon name="info" size={13} style={{ display:'inline', marginRight:6 }} />
-            MetaMask가 없으신가요?{" "}
+            서명은 무료예요. MetaMask가 없으신가요?{" "}
             <a href="https://metamask.io/download" target="_blank" rel="noreferrer" style={{ color:'var(--ink)', fontWeight:700, textDecoration:'underline' }}>
-              metamask.io
+              여기서 설치
             </a>
-            에서 설치하세요
           </div>
 
           <div className="divider" />

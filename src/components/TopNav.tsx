@@ -8,88 +8,86 @@ import Avatar from "./Avatar";
 interface Me {
   id: string;
   address: string;
-  role: "student" | "coach" | null;
+  role: "student" | "coach" | "admin" | null;
   nickname?: string;
+  is_admin?: number;
 }
 
 export default function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [me, setMe] = useState<Me | null>(null);
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [walletAddr, setWalletAddr] = useState("");
-  const [walletEth] = useState("0.41");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQ, setSearchQ] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         const d = data as Me | null;
-        if (d?.id) {
-          setMe(d);
-          if (d.address) {
-            setWalletConnected(true);
-            setWalletAddr(d.address);
-          }
-        }
+        if (d?.id) setMe(d);
       })
       .catch(() => {});
   }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setSearchOpen(false);
     }
-    if (menuOpen) document.addEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, [menuOpen]);
+  }, []);
 
   const handleLogout = async () => {
     setMenuOpen(false);
     await fetch("/api/auth/logout", { method: "POST" });
     setMe(null);
-    setWalletConnected(false);
-    setWalletAddr("");
     router.push("/");
     router.refresh();
   };
 
-  const isOn = (href: string) => {
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQ.trim()) return;
+    router.push(`/coaches?q=${encodeURIComponent(searchQ.trim())}`);
+    setSearchOpen(false);
+    setSearchQ("");
+  };
+
+  const isOn = (href: string, exact = false) => {
     if (href === "/") return pathname === "/";
-    return pathname.startsWith(href);
+    if (href.includes("?")) return false;
+    if (exact) return pathname === href;
+    return pathname === href || pathname.startsWith(href + "/");
   };
 
   const navLinks = () => {
     if (!me) {
       return [
-        { label: "코치 찾기", href: "/coaches" },
-        { label: "코치 되기", href: "/auth/register" },
+        { label: "코치 찾기", href: "/coaches", exact: false },
+        { label: "코치 되기", href: "/auth/register", exact: false },
       ];
     }
     if (me.role === "student") {
       return [
-        { label: "둘러보기", href: "/coaches" },
-        { label: "내 수업", href: "/dashboard/student" },
-        { label: "메시지", href: "/chat" },
+        { label: "둘러보기", href: "/coaches", exact: false },
+        { label: "내 수업", href: "/dashboard/student", exact: true },
+        { label: "메시지", href: "/chat", exact: false },
       ];
     }
     if (me.role === "coach") {
       return [
-        { label: "대시보드", href: "/dashboard/coach" },
-        { label: "수익", href: "/dashboard/coach?tab=earnings" },
-        { label: "프로필", href: "/dashboard/coach?tab=profile" },
+        { label: "대시보드", href: "/dashboard/coach", exact: true },
+        { label: "강의 관리", href: "/dashboard/coach/lectures", exact: false },
+        { label: "수익", href: "/dashboard/coach?tab=earnings", exact: false },
       ];
     }
-    return [];
+    return [] as { label: string; href: string; exact: boolean }[];
   };
-
-  const short = walletAddr
-    ? `${walletAddr.slice(0, 6)}…${walletAddr.slice(-4)}`
-    : "";
 
   const dashHref = me?.role === "coach" ? "/dashboard/coach" : "/dashboard/student";
 
@@ -106,7 +104,7 @@ export default function TopNav() {
             <Link
               key={l.href}
               href={l.href}
-              className={`nav-link${isOn(l.href) ? " on" : ""}`}
+              className={`nav-link${isOn(l.href, l.exact) ? " on" : ""}`}
             >
               {l.label}
             </Link>
@@ -114,21 +112,43 @@ export default function TopNav() {
         </div>
 
         <div className="nav-right">
+          {/* Search */}
+          <div ref={searchRef} style={{ position: "relative" }}>
+            <button
+              className="notif-btn"
+              aria-label="검색"
+              onClick={() => setSearchOpen((o) => !o)}
+            >
+              <Icon name="search" size={18} />
+            </button>
+            {searchOpen && (
+              <form
+                onSubmit={handleSearch}
+                style={{
+                  position: "absolute", top: "calc(100% + 10px)", right: 0,
+                  background: "var(--surface)", border: "1px solid var(--line)",
+                  borderRadius: "var(--r)", boxShadow: "var(--sh-md)",
+                  padding: "10px", zIndex: 200, display: "flex", gap: 8, minWidth: 280,
+                }}
+              >
+                <input
+                  autoFocus
+                  className="input"
+                  placeholder="게임, 강의, 코치 이름 검색"
+                  value={searchQ}
+                  onChange={(e) => setSearchQ(e.target.value)}
+                  style={{ flex: 1, height: 38 }}
+                />
+                <button type="submit" className="btn btn-accent btn-sm">
+                  <Icon name="search" size={14} />
+                </button>
+              </form>
+            )}
+          </div>
+
           {me && (
             <button className="notif-btn" aria-label="알림">
               <Icon name="bell" size={20} />
-            </button>
-          )}
-
-          {walletConnected ? (
-            <div className="wallet">
-              <span className="dot" />
-              <span className="mono">{short} · {walletEth} ETH</span>
-            </div>
-          ) : (
-            <button className="wallet btn" onClick={() => {}}>
-              <Icon name="wallet" size={15} />
-              지갑 연결
             </button>
           )}
 
@@ -149,7 +169,6 @@ export default function TopNav() {
                   borderRadius: "var(--r)", boxShadow: "0 8px 24px rgba(0,0,0,.10)",
                   minWidth: 200, zIndex: 200, overflow: "hidden",
                 }}>
-                  {/* User info */}
                   <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--line)" }}>
                     <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>
                       {me.nickname || "사용자"}
@@ -161,39 +180,30 @@ export default function TopNav() {
                     )}
                   </div>
 
-                  {/* Menu items */}
                   <div style={{ padding: "6px 0" }}>
-                    <Link
-                      href={dashHref}
-                      onClick={() => setMenuOpen(false)}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 10,
-                        padding: "9px 16px", fontSize: 14, color: "var(--ink)",
-                        textDecoration: "none", fontWeight: 600,
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--sunken)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      <Icon name="user" size={15} />
-                      내 대시보드
-                    </Link>
-                    <Link
-                      href="/profile/setup"
-                      onClick={() => setMenuOpen(false)}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 10,
-                        padding: "9px 16px", fontSize: 14, color: "var(--ink)",
-                        textDecoration: "none", fontWeight: 600,
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--sunken)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                    >
-                      <Icon name="settings" size={15} />
-                      프로필 설정
-                    </Link>
+                    {[
+                      { href: dashHref, icon: "user" as const, label: "내 대시보드" },
+                      { href: "/profile/setup", icon: "settings" as const, label: "프로필 설정" },
+                      ...(me.is_admin ? [{ href: "/admin", icon: "shieldChk" as const, label: "관리자 패널" }] : []),
+                    ].map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMenuOpen(false)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 10,
+                          padding: "9px 16px", fontSize: 14, color: item.href === "/admin" ? "var(--warn)" : "var(--ink)",
+                          textDecoration: "none", fontWeight: 600,
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--sunken)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                      >
+                        <Icon name={item.icon} size={15} />
+                        {item.label}
+                      </Link>
+                    ))}
                   </div>
 
-                  {/* Logout */}
                   <div style={{ borderTop: "1px solid var(--line)", padding: "6px 0" }}>
                     <button
                       onClick={handleLogout}

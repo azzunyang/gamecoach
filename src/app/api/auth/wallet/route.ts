@@ -112,9 +112,13 @@ export async function POST(req: NextRequest) {
     const userId = crypto.randomUUID();
     const finalNickname = nickname?.trim() || addr.slice(0, 6) + "..." + addr.slice(-4);
 
+    // 환경변수에 지정된 지갑 주소면 첫 로그인 시 자동으로 admin 설정
+    const adminWallet = (process.env.ADMIN_WALLET ?? "").toLowerCase();
+    const isAdminWallet = adminWallet && addr === adminWallet ? 1 : 0;
+
     await d1.prepare(
-      "INSERT INTO users (id, wallet, role, nickname, created_at) VALUES (?, ?, ?, ?, unixepoch())"
-    ).bind(userId, addr, role, finalNickname).run();
+      "INSERT INTO users (id, wallet, role, nickname, is_admin, created_at) VALUES (?, ?, ?, ?, ?, unixepoch())"
+    ).bind(userId, addr, role, finalNickname, isAdminWallet).run();
 
     if (role === "coach") {
       await d1.prepare(

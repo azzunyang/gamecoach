@@ -8,8 +8,10 @@ export interface SessionData {
   userId: string;
   phone?: string;
   wallet?: string;
-  role: "student" | "coach";
+  discordId?: string;
+  role: "student" | "coach" | "admin";
   nickname?: string;
+  is_admin?: number;
 }
 
 function kv(): KVNamespace {
@@ -47,6 +49,17 @@ export async function createSession(res: NextResponse, data: SessionData): Promi
     path: "/",
   });
   return token;
+}
+
+export async function updateSession(req: NextRequest, patch: Partial<SessionData>): Promise<void> {
+  const token = req.cookies.get(SESSION_COOKIE)?.value;
+  if (!token) return;
+  try {
+    const raw = await kv().get(`session:${token}`);
+    if (!raw) return;
+    const data = JSON.parse(raw) as SessionData;
+    await kv().put(`session:${token}`, JSON.stringify({ ...data, ...patch }), { expirationTtl: SESSION_TTL });
+  } catch { /* ignore */ }
 }
 
 export async function destroySession(req: NextRequest, res: NextResponse): Promise<void> {

@@ -1,10 +1,11 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
+import LectureThumbnail from "@/components/LectureThumbnail";
 
 const GAME_GRAD: Record<string, [string, string]> = {
   'Valorant':          ['#2A1216','#5A1E27'],
@@ -28,17 +29,17 @@ const CATEGORIES = [
 
 const FEATURED = [
   { id:'dragonking', name:'DragonKing', game:'League of Legends', cat:'moba', tier:'챌린저',       position:'정글',   price:0.05,  rating:4.9,  reviews:127, avi:2, online:true,  tagline:'정글 동선·오브젝트 설계로 게임을 읽는 법을 가르칩니다.' },
-  { id:'shadowace',  name:'ShadowAce',  game:'Valorant',          cat:'fps',  tier:'다이아 2',      position:'타격대', price:0.04,  rating:4.8,  reviews:89,  avi:0, online:false, tagline:'에임 루틴과 엔트리 동선으로 라운드 주도권을 잡으세요.' },
+  { id:'shadowace',  name:'ShadowAce',  game:'Valorant',          cat:'fps',  tier:'다이아 2',      position:'타격대', price:0.04,  rating:4.80, reviews:89,  avi:0, online:false, tagline:'에임 루틴과 엔트리 동선으로 라운드 주도권을 잡으세요.' },
   { id:'frostqueen', name:'FrostQueen', game:'Overwatch 2',        cat:'team', tier:'그랜드마스터',  position:'서포터', price:0.045, rating:4.95, reviews:64,  avi:5, online:true,  tagline:'힐러 포지셔닝과 궁극기 운용으로 팀파이트를 설계합니다.' },
 ];
 
 const LESSONS = [
-  { id:'l1', title:'Valorant 에임 집중 1:1 코칭',    coachId:'shadowace',  coach:'ShadowAce',  game:'Valorant',          duration:60, price:0.04,  rating:4.8,  students:128 },
-  { id:'l2', title:'LoL 정글 동선 완전 마스터',       coachId:'dragonking', coach:'DragonKing', game:'League of Legends',  duration:60, price:0.05,  rating:4.9,  students:214 },
-  { id:'l3', title:'오버워치2 서포터 포지셔닝 심화',  coachId:'frostqueen', coach:'FrostQueen', game:'Overwatch 2',        duration:60, price:0.045, rating:4.95, students:98  },
-  { id:'l4', title:'TFT 메타 덱 & 경제 완전 정복',    coachId:'tigerstrat', coach:'tig3r_strat',game:'TFT',               duration:60, price:0.035, rating:4.7,  students:57  },
-  { id:'l5', title:'PUBG 자기장 운영 & 교전 판단',    coachId:'voidpubg',   coach:'VoidWalker', game:'PUBG',               duration:90, price:0.04,  rating:4.6,  students:48  },
-  { id:'l6', title:'CS2 AWP 포지셔닝 집중 코칭',      coachId:'csgodemon',  coach:'demon.cs',   game:'CS2',               duration:60, price:0.05,  rating:4.85, students:76  },
+  { id:'l1', title:'Valorant 에임 집중 1:1 코칭',    coachId:'shadowace',   coach:'ShadowAce',   game:'Valorant',          duration:60, price:0.04,  rating:4.8,  students:89  },
+  { id:'l2', title:'LoL 정글 동선 완전 마스터',       coachId:'dragonking',  coach:'DragonKing',  game:'League of Legends', duration:60, price:0.05,  rating:4.9,  students:127 },
+  { id:'l3', title:'오버워치2 서포터 포지셔닝 심화',  coachId:'frostqueen',  coach:'FrostQueen',  game:'Overwatch 2',       duration:60, price:0.045, rating:4.95, students:64  },
+  { id:'l4', title:'TFT 메타 덱 & 경제 완전 정복',    coachId:'tigerstrat',  coach:'tig3r_strat', game:'TFT',               duration:60, price:0.035, rating:4.70, students:41  },
+  { id:'l5', title:'PUBG 자기장 운영 & 교전 판단',    coachId:'voidpubg',    coach:'VoidWalker',  game:'PUBG',              duration:90, price:0.04,  rating:4.60, students:33  },
+  { id:'l6', title:'CS2 AWP 포지셔닝 집중 코칭',      coachId:'csgodemon',   coach:'demon.cs',    game:'CS2',               duration:60, price:0.05,  rating:4.85, students:52  },
 ];
 
 const TRUST = [
@@ -71,52 +72,19 @@ function CoachThumb({ game, h = 160, glyph }: { game: string; h?: number; glyph?
   );
 }
 
-/* ── 강의 썸네일 카드 ── */
+/* ── 강의 썸네일 카드 (모크 폴백) ── */
 function LessonCard({ l }: { l: typeof LESSONS[0] }) {
-  const cat = CATEGORIES.find((c) => c.games.includes(l.game));
-  const g = GAME_GRAD[l.game] ?? ['#1a2b0a','#2d4a10'];
   return (
     <Link href={`/coaches/${l.coachId}`} style={{ textDecoration:'none' }}>
       <div className="card hover-lift" style={{ overflow:'hidden', cursor:'pointer' }}>
-        {/* 썸네일 */}
-        <div className="thumb" style={{ height: 120 }}>
-          <div className="thumb-grad" style={{ background: `linear-gradient(135deg,${g[0]},${g[1]})` }} />
-          <div className="thumb-noise" />
-          {/* 게임 글리프 워터마크 */}
-          <div style={{ position:'absolute', right:14, bottom:8, opacity:.18, color:'#fff', fontSize:52, lineHeight:1, fontWeight:900 }}>
-            {cat?.glyph ?? '○'}
-          </div>
-          {/* 강의 제목 */}
-          <div style={{ position:'absolute', left:14, top:14, right:50, color:'#fff', fontWeight:800, fontSize:13.5, lineHeight:1.4, textShadow:'0 1px 6px rgba(0,0,0,.4)' }}>
-            {l.title}
-          </div>
-          {/* 카테고리 배지 */}
-          <div style={{ position:'absolute', left:14, bottom:12 }}>
-            <span style={{ background:'rgba(205,242,74,.22)', border:'1px solid rgba(205,242,74,.35)', color:'#CDF24A', fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:999, backdropFilter:'blur(4px)' }}>
-              {cat?.name ?? l.game}
-            </span>
-          </div>
-          {/* 시간 배지 */}
-          <div style={{ position:'absolute', right:12, bottom:12 }}>
-            <span style={{ background:'rgba(255,255,255,.14)', color:'rgba(255,255,255,.9)', fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:999, backdropFilter:'blur(4px)' }}>
-              {l.duration}분
-            </span>
-          </div>
-        </div>
-
-        {/* 카드 바디 */}
-        <div style={{ padding:'12px 14px 14px' }}>
-          <div className="row spread" style={{ alignItems:'center' }}>
-            <div>
-              <div style={{ fontSize:12.5, color:'var(--muted)', marginBottom:1 }}>{l.coach} 코치</div>
-              <div style={{ fontSize:11.5, color:'var(--faint)' }}>수강생 {l.students}명</div>
-            </div>
-            <div style={{ textAlign:'right' }}>
-              <div className="eth-amt" style={{ fontSize:14, fontWeight:800, color:'var(--ink)' }}>{l.price} ETH</div>
-              <div style={{ fontSize:11.5, color:'#E8910C', fontWeight:700 }}>★ {l.rating}</div>
-            </div>
-          </div>
-        </div>
+        <LectureThumbnail
+          game={l.game}
+          title={l.title}
+          coachName={l.coach}
+          price={String(l.price)}
+          duration={l.duration}
+          height={150}
+        />
       </div>
     </Link>
   );
@@ -124,10 +92,16 @@ function LessonCard({ l }: { l: typeof LESSONS[0] }) {
 
 /* ── 코치 카드 ── */
 function CoachCard({ c, big = false }: { c: typeof FEATURED[0]; big?: boolean }) {
-  const cat = CATEGORIES.find((x) => x.id === c.cat);
   return (
     <Link href={`/coaches/${c.id}`} className="card hover-lift" style={{ overflow:'hidden', display:'block', textDecoration:'none' }}>
-      <CoachThumb game={c.game} h={big ? 190 : 130} glyph={cat?.glyph} />
+      <LectureThumbnail
+        game={c.game}
+        title={c.tagline}
+        coachName={c.name}
+        tier={c.tier}
+        price={String(c.price)}
+        height={big ? 190 : 130}
+      />
       <div style={{ padding: '14px 16px 16px' }}>
         <div className="row gap-10" style={{ marginBottom: 10 }}>
           <Avatar name={c.name} idx={c.avi} size={big ? 42 : 36} online={c.online} />
@@ -157,7 +131,25 @@ function CoachCard({ c, big = false }: { c: typeof FEATURED[0]; big?: boolean })
   );
 }
 
+interface ApiLecture {
+  id: string; title: string; game: string; game_category: string;
+  price_eth: string; duration: number; level: string;
+  coach_id: string; coach_nickname: string;
+}
+
 export default function LandingPage() {
+  const [apiLectures, setApiLectures] = useState<ApiLecture[]>([]);
+
+  useEffect(() => {
+    fetch("/api/lectures?page=1")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        const data = d as { lectures?: ApiLecture[] } | null;
+        if (data?.lectures && data.lectures.length > 0) setApiLectures(data.lectures.slice(0, 6));
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <>
       <TopNav />
@@ -293,10 +285,28 @@ export default function LandingPage() {
               <Link href="/coaches" className="btn btn-outline btn-sm">전체 보기</Link>
             </div>
             <div className="grid grid-3 gap-16">
-              {LESSONS.map((l) => (
-                <LessonCard key={l.id} l={l} />
-              ))}
+              {apiLectures.length > 0
+                ? apiLectures.map((l) => (
+                    <Link key={l.id} href={`/lectures/${l.id}`} style={{ textDecoration:'none' }}>
+                      <div className="card hover-lift" style={{ overflow:'hidden', cursor:'pointer', borderRadius:'var(--r)' }}>
+                        <LectureThumbnail
+                          game={l.game}
+                          title={l.title}
+                          coachName={l.coach_nickname}
+                          level={l.level}
+                          price={l.price_eth}
+                          duration={l.duration}
+                          height={160}
+                        />
+                      </div>
+                    </Link>
+                  ))
+                : LESSONS.map((l) => <LessonCard key={l.id} l={l} />)
+              }
             </div>
+            {apiLectures.length === 0 && (
+              <p style={{ textAlign:'center', color:'var(--muted)', fontSize:13, marginTop:12 }}>아직 등록된 강의가 없어요. 첫 번째 강의를 등록해보세요!</p>
+            )}
           </div>
         </section>
 

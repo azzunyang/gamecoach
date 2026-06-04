@@ -91,14 +91,12 @@ function RegisterForm() {
       <TopNav />
       <main style={{ minHeight:'100dvh', display:'flex', alignItems:'center', justifyContent:'center', padding:'calc(var(--nav-h) + 24px) 20px 60px' }}>
         <div className="card" style={{ width:'100%', maxWidth:460, padding:36 }}>
-          {/* Logo */}
           <div style={{ textAlign:'center', marginBottom:28 }}>
             <div style={{ display:'inline-flex', width:52, height:52, borderRadius:14, background:'var(--ink)', alignItems:'center', justifyContent:'center', color:'var(--accent)', fontSize:24, fontWeight:900, marginBottom:10 }}>G</div>
             <h1 style={{ fontSize:22, fontWeight:900, marginBottom:6 }}>GameCoach 시작하기</h1>
             <p style={{ fontSize:14, color:'var(--muted)' }}>역할을 선택하고 MetaMask로 가입하세요</p>
           </div>
 
-          {/* Role selection */}
           <div className="col gap-12" style={{ marginBottom:28 }}>
             <div className="label">어떤 역할로 시작하시나요?</div>
             <div className="grid-2 gap-12">
@@ -160,11 +158,10 @@ function RegisterForm() {
 
           <div className="notice" style={{ marginBottom:20 }}>
             <Icon name="info" size={13} style={{ display:'inline', marginRight:6 }} />
-            MetaMask가 없으신가요?{" "}
+            서명은 무료예요. MetaMask가 없으신가요?{" "}
             <a href="https://metamask.io/download" target="_blank" rel="noreferrer" style={{ color:'var(--ink)', fontWeight:700, textDecoration:'underline' }}>
-              metamask.io
+              여기서 설치
             </a>
-            에서 설치하세요
           </div>
 
           <div className="divider" />

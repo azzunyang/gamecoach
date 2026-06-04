@@ -7,6 +7,7 @@ import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
+import LectureThumbnail from "@/components/LectureThumbnail";
 
 const GAME_GRAD: Record<string, [string, string]> = {
   'Valorant':           ['#2A1216','#5A1E27'],
@@ -69,7 +70,14 @@ function CoachThumb({ game, cat }: { game: string; cat: string }) {
 function CoachCard({ c }: { c: Coach }) {
   return (
     <Link href={`/coaches/${c.id}`} className="card hover-lift" style={{ overflow:'hidden', display:'block', textDecoration:'none' }}>
-      <CoachThumb game={c.game ?? ''} cat={c.game_category} />
+      <LectureThumbnail
+        game={c.game ?? ''}
+        title={c.nickname}
+        tier={c.tier}
+        price={c.price_eth}
+        duration={c.session_min}
+        height={150}
+      />
       <div style={{ padding:'16px 16px 18px' }}>
         <div className="row gap-8" style={{ marginBottom:10 }}>
           <Avatar name={c.nickname} idx={c.avi ?? 0} size={38} online={c.online} />
@@ -100,22 +108,32 @@ function CoachCard({ c }: { c: Coach }) {
 function BrowseContent() {
   const searchParams = useSearchParams();
   const catParam = searchParams.get("cat");
+  const qParam = searchParams.get("q") ?? "";
   const [activeCat, setActiveCat] = useState<string | null>(catParam);
   const [sort, setSort] = useState("rating");
   const [coaches, setCoaches] = useState<Coach[]>(MOCK_COACHES);
+  const [searchInput, setSearchInput] = useState(qParam);
+  const [searchQ, setSearchQ] = useState(qParam);
 
   useEffect(() => {
-    const q = activeCat ? `?category=${activeCat}` : "";
-    fetch(`/api/coaches${q}`)
+    const params = new URLSearchParams();
+    if (activeCat) params.set("category", activeCat);
+    if (searchQ) params.set("q", searchQ);
+    const qs = params.toString();
+    fetch(`/api/coaches${qs ? "?"+qs : ""}`)
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         const d = data as { coaches?: Coach[] } | null;
         if (d?.coaches && d.coaches.length > 0) setCoaches(d.coaches);
       })
       .catch(() => {});
-  }, [activeCat]);
+  }, [activeCat, searchQ]);
 
-  const filtered = coaches.filter((c) => !activeCat || c.game_category === activeCat);
+  const filtered = coaches.filter((c) => {
+    const matchCat = !activeCat || c.game_category === activeCat;
+    const matchQ = !searchQ || c.nickname.toLowerCase().includes(searchQ.toLowerCase());
+    return matchCat && matchQ;
+  });
   const sorted = [...filtered].sort((a, b) => {
     if (sort === "rating")     return b.avg_rating - a.avg_rating;
     if (sort === "price_asc")  return parseFloat(a.price_eth) - parseFloat(b.price_eth);
@@ -162,9 +180,30 @@ function BrowseContent() {
         </div>
 
         <div>
+          {/* Search bar */}
+          <form
+            onSubmit={(e) => { e.preventDefault(); setSearchQ(searchInput); }}
+            style={{ marginBottom:20, display:'flex', gap:10 }}
+          >
+            <div style={{ position:'relative', flex:1 }}>
+              <Icon name="search" size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--muted)' }} />
+              <input
+                className="input"
+                placeholder="게임 이름, 코치 이름, 강의 이름 검색"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                style={{ paddingLeft:36 }}
+              />
+            </div>
+            <button type="submit" className="btn btn-accent btn-sm">검색</button>
+            {searchQ && (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setSearchInput(""); setSearchQ(""); }}>초기화</button>
+            )}
+          </form>
+
           <div className="spread" style={{ marginBottom:20 }}>
             <h2 className="h3">
-              {activeCat ? CATEGORIES.find(c=>c.id===activeCat)?.name : '인기 코치'}
+              {searchQ ? `"${searchQ}" 검색 결과` : activeCat ? CATEGORIES.find(c=>c.id===activeCat)?.name : '인기 코치'}
               <span style={{ fontSize:14, color:'var(--muted)', fontWeight:500, marginLeft:8 }}>{sorted.length}명</span>
             </h2>
             <div className="seg">

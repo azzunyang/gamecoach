@@ -13,7 +13,7 @@ const GAME_CATEGORIES = [
   { id:'casual', name:'캐주얼' },
 ];
 
-interface Me { id: string; role: "student" | "coach" | null; nickname?: string }
+interface Me { id: string; role: "student" | "coach" | null; nickname?: string; address?: string }
 
 export default function ProfileSetupPage() {
   const router = useRouter();
@@ -32,8 +32,12 @@ export default function ProfileSetupPage() {
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
         const d = data as Me | null;
-        if (!d?.id) router.push("/auth/login");
-        else setMe(d);
+        if (!d?.id) { router.push("/auth/login"); return; }
+        setMe(d);
+        // 지갑 주소 형식이 아닌 경우에만 pre-fill
+        if (d.nickname && !d.nickname.includes("...")) {
+          setNickname(d.nickname);
+        }
       })
       .catch(() => router.push("/auth/login"));
   }, [router]);

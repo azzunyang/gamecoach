@@ -1,4 +1,4 @@
-export type Role = 'coach' | 'student' | 'both';
+export type Role = 'coach' | 'student' | 'both' | 'admin';
 
 export type GameCategory = 'FPS' | 'MOBA' | '전략' | '팀파이트' | '배틀로얄' | '캐주얼' | '기타';
 
@@ -12,7 +12,25 @@ export interface User {
   discord_id?: string;
   role: Role;
   wallet?: string;
+  is_admin?: number;
   created_at: number;
+}
+
+export interface Lecture {
+  id: string;
+  coach_id: string;
+  title: string;
+  description?: string;
+  game: string;
+  game_category: string;
+  price_eth: string;
+  duration: number;
+  level: string;
+  is_published: number;
+  created_at: number;
+  coach_nickname?: string;
+  coach_tier?: string;
+  coach_avg_rating?: number;
 }
 
 export interface Coach {

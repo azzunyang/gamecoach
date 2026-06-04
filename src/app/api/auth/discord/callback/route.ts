@@ -5,11 +5,8 @@ import { getSession } from "@/lib/session";
 export const runtime = "edge";
 
 function db(): D1Database {
-  try {
-    return getRequestContext().env.DB as D1Database;
-  } catch {
-    return null as unknown as D1Database;
-  }
+  try { return getRequestContext().env.DB as D1Database; }
+  catch { return null as unknown as D1Database; }
 }
 
 export async function GET(req: NextRequest) {
@@ -22,7 +19,6 @@ export async function GET(req: NextRequest) {
   const clientSecret = process.env.DISCORD_CLIENT_SECRET ?? "";
   const redirectUri = process.env.DISCORD_REDIRECT_URI ?? "";
 
-  // Exchange code for access token
   const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -41,7 +37,6 @@ export async function GET(req: NextRequest) {
 
   const { access_token } = await tokenRes.json() as { access_token: string };
 
-  // Fetch Discord user
   const userRes = await fetch("https://discord.com/api/users/@me", {
     headers: { Authorization: `Bearer ${access_token}` },
   });
@@ -52,14 +47,14 @@ export async function GET(req: NextRequest) {
 
   const discordUser = await userRes.json() as { id: string; username: string };
 
-  // Link to current session user if logged in
+  // 로그인된 유저의 프로필에 Discord 연동
   const session = await getSession(req);
   if (session) {
     const d1 = db();
     if (d1) {
       await d1.prepare(
-        "UPDATE users SET discord_id = ?, discord_username = ? WHERE id = ?"
-      ).bind(discordUser.id, discordUser.username, session.userId).run();
+        "UPDATE users SET discord_id = ? WHERE id = ?"
+      ).bind(discordUser.id, session.userId).run();
     }
     return NextResponse.redirect(new URL("/dashboard/" + session.role + "?discord=linked", req.url));
   }

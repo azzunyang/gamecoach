@@ -1,10 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
+import LectureThumbnail from "@/components/LectureThumbnail";
+import Link from "next/link";
 
 interface Lesson {
   id: string;
@@ -38,9 +40,23 @@ const STATE_MAP: Record<string, { label:string; cls:string }> = {
 
 interface Me { id: string; nickname?: string }
 
+interface LectureWishlist {
+  id: string;
+  title: string;
+  game: string;
+  price_eth: string;
+  duration: number;
+  coach_nickname: string;
+  coach_tier: string;
+}
+
 export default function StudentDashboard() {
+  const router = useRouter();
   const [lessons, setLessons] = useState<Lesson[]>(MOCK_LESSONS);
   const [me, setMe] = useState<Me | null>(null);
+  const [lectureWishlist, setLectureWishlist] = useState<LectureWishlist[]>([]);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -51,7 +67,27 @@ export default function StudentDashboard() {
       .then((r) => r.ok ? r.json() : null)
       .then((data) => { const d = data as { lessons?: Lesson[] } | null; if (d?.lessons) setLessons(d.lessons); })
       .catch(() => {});
+    fetch("/api/wishlist/lectures")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { const d = data as { lectures?: LectureWishlist[] } | null; if (d?.lectures) setLectureWishlist(d.lectures); })
+      .catch(() => {});
   }, []);
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/user/delete", { method: "DELETE" });
+      if (!res.ok) {
+        const e = await res.json() as { error?: string };
+        alert(e.error ?? "탈퇴 실패");
+        return;
+      }
+      router.push("/");
+    } finally {
+      setDeleting(false);
+      setDeleteConfirm(false);
+    }
+  };
 
   const active = lessons.filter((l) => ['PENDING','ACCEPTED','ACTIVE'].includes(l.state));
   const done = lessons.filter((l) => l.state === 'COMPLETED');
@@ -137,7 +173,7 @@ export default function StudentDashboard() {
           )}
         </div>
 
-        {/* Faves */}
+        {/* Faves - Coaches */}
         <div>
           <h2 className="h3" style={{ marginBottom:16 }}>찜한 코치</h2>
           <div className="grid-2 gap-16">
@@ -160,6 +196,68 @@ export default function StudentDashboard() {
               </Link>
             ))}
           </div>
+        </div>
+
+        {/* Faves - Lectures */}
+        <div style={{ marginTop:32 }}>
+          <h2 className="h3" style={{ marginBottom:16 }}>찜한 강의</h2>
+          {lectureWishlist.length === 0 ? (
+            <div className="card card-pad" style={{ textAlign:'center', color:'var(--muted)', padding:'32px 20px' }}>
+              <Icon name="book" size={28} style={{ margin:'0 auto 10px', display:'block' }} />
+              <div style={{ fontWeight:600, marginBottom:6 }}>찜한 강의가 없어요</div>
+              <Link href="/coaches" className="btn btn-outline btn-sm" style={{ display:'inline-flex', marginTop:8 }}>강의 둘러보기</Link>
+            </div>
+          ) : (
+            <div className="grid-2 gap-14">
+              {lectureWishlist.map((lec) => (
+                <Link key={lec.id} href={`/lectures/${lec.id}`} style={{ textDecoration:'none' }}>
+                  <div className="card hover-lift" style={{ overflow:'hidden' }}>
+                    <LectureThumbnail
+                      game={lec.game}
+                      title={lec.title}
+                      coachName={lec.coach_nickname}
+                      tier={lec.coach_tier}
+                      price={lec.price_eth}
+                      duration={lec.duration}
+                      height={140}
+                    />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Account deletion */}
+        <div style={{ marginTop:48, paddingTop:32, borderTop:'1px solid var(--line)' }}>
+          <h2 className="h3" style={{ marginBottom:8, color:'var(--danger)' }}>계정 탈퇴</h2>
+          <p style={{ fontSize:14, color:'var(--muted)', marginBottom:16 }}>탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다. 진행 중인 수업이 있으면 탈퇴할 수 없습니다.</p>
+          {!deleteConfirm ? (
+            <button
+              className="btn btn-outline btn-sm"
+              style={{ color:'var(--danger)', borderColor:'var(--danger)' }}
+              onClick={() => setDeleteConfirm(true)}
+            >
+              회원 탈퇴
+            </button>
+          ) : (
+            <div className="card card-pad" style={{ background:'var(--danger-tint)', borderColor:'rgba(218,58,63,.2)', maxWidth:400 }}>
+              <div style={{ fontWeight:700, marginBottom:8, color:'var(--danger)' }}>정말 탈퇴하시겠습니까?</div>
+              <p style={{ fontSize:13, color:'var(--muted)', marginBottom:16 }}>이 작업은 되돌릴 수 없습니다.</p>
+              <div className="row gap-8">
+                <button className="btn btn-outline btn-sm" onClick={() => setDeleteConfirm(false)}>취소</button>
+                <button
+                  className="btn btn-sm"
+                  style={{ background:'var(--danger)', color:'#fff', border:'none' }}
+                  disabled={deleting}
+                  onClick={handleDeleteAccount}
+                >
+                  {deleting ? <span className="spin dark" /> : null}
+                  탈퇴 확인
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Review prompts */}

@@ -32,35 +32,66 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ lessons: lessons.results });
 }
 
-// POST /api/lessons — student creates lesson request
+// POST /api/lessons — create lesson request
 export async function POST(req: NextRequest) {
-  const session = await getSession(req);
-  if (!session || session.role !== "student") {
-    return NextResponse.json({ error: "수강생만 수업을 신청할 수 있습니다" }, { status: 403 });
-  }
+  try {
+    const session = await getSession(req);
+    if (!session) {
+      return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 });
+    }
 
-  const d1 = db();
-  if (!d1) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+    const d1 = db();
+    if (!d1) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
 
-  const { coachId, slotId, txHash, contractAddr, depositEth, balanceEth } = await req.json() as { coachId: string; slotId: string; txHash?: string; contractAddr?: string; depositEth?: string; balanceEth?: string };
-  if (!coachId || !slotId) {
-    return NextResponse.json({ error: "coachId, slotId가 필요합니다" }, { status: 400 });
-  }
+    const body = await req.json() as {
+      coachId: string; slotId?: string; date?: string; time?: string;
+      goal?: string; txHash?: string; contractAddr?: string; depositEth?: string; balanceEth?: string;
+    };
+    const { coachId, date, time, goal, txHash, contractAddr, depositEth, balanceEth } = body;
 
-  // Check slot is available
-  const slot = await d1.prepare("SELECT * FROM slots WHERE id = ? AND is_booked = 0").bind(slotId).first<{ id: string; coach_id: string }>();
-  if (!slot || slot.coach_id !== coachId) {
-    return NextResponse.json({ error: "슬롯을 찾을 수 없거나 이미 예약되었습니다" }, { status: 409 });
-  }
+    if (!coachId) {
+      return NextResponse.json({ error: "coachId가 필요합니다" }, { status: 400 });
+    }
 
-  const lessonId = crypto.randomUUID();
-  await d1.batch([
-    d1.prepare(
+    // 자기 자신의 강의는 신청 불가
+    if (coachId === session.userId) {
+      return NextResponse.json({ error: "본인 강의는 신청할 수 없습니다" }, { status: 400 });
+    }
+
+    let finalSlotId = body.slotId;
+
+    if (finalSlotId) {
+      const slot = await d1.prepare("SELECT * FROM slots WHERE id = ? AND is_booked = 0").bind(finalSlotId).first<{ id: string; coach_id: string }>();
+      if (!slot || slot.coach_id !== coachId) {
+        return NextResponse.json({ error: "슬롯을 찾을 수 없거나 이미 예약되었습니다" }, { status: 409 });
+      }
+      await d1.prepare("UPDATE slots SET is_booked = 1 WHERE id = ?").bind(finalSlotId).run();
+    } else {
+      // 날짜·시간으로 슬롯 자동 생성
+      finalSlotId = crypto.randomUUID();
+      const slotDate = date ?? new Date().toISOString().split("T")[0];
+      const slotTime = time ?? "00:00";
+      await d1.prepare(
+        "INSERT INTO slots (id, coach_id, date, start_time, end_time, is_booked) VALUES (?, ?, ?, ?, ?, 1)"
+      ).bind(finalSlotId, coachId, slotDate, slotTime, slotTime).run();
+    }
+
+    const lessonId = crypto.randomUUID();
+    await d1.prepare(
       `INSERT INTO lessons (id, coach_id, student_id, slot_id, contract_addr, tx_hash, state, deposit_eth, balance_eth, created_at)
        VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, unixepoch())`
-    ).bind(lessonId, coachId, session.userId, slotId, contractAddr ?? null, txHash ?? null, depositEth ?? "0", balanceEth ?? "0"),
-    d1.prepare("UPDATE slots SET is_booked = 1 WHERE id = ?").bind(slotId),
-  ]);
+    ).bind(lessonId, coachId, session.userId, finalSlotId, contractAddr ?? "", txHash ?? null, depositEth ?? "0", balanceEth ?? "0").run();
 
-  return NextResponse.json({ ok: true, lessonId }, { status: 201 });
+    // 코치에게 알림 저장
+    try {
+      await d1.prepare(
+        "INSERT INTO notifications (id, user_id, type, payload, is_read, created_at) VALUES (?, ?, 'NEW_LESSON', ?, 0, unixepoch())"
+      ).bind(crypto.randomUUID(), coachId, JSON.stringify({ lessonId, goal: goal ?? "" })).run();
+    } catch { /* 알림 실패는 무시 */ }
+
+    return NextResponse.json({ ok: true, lessonId }, { status: 201 });
+  } catch (e) {
+    console.error("lesson post error:", e);
+    return NextResponse.json({ error: "수업 신청 중 오류가 발생했습니다" }, { status: 500 });
+  }
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRequestContext } from "@cloudflare/next-on-pages";
-import { getSession } from "@/lib/session";
+import { getSession, updateSession } from "@/lib/session";
 
 export const runtime = "edge";
 
@@ -55,6 +55,11 @@ export async function PATCH(req: NextRequest) {
         body.intro ?? null,
         session.userId,
       ).run();
+    }
+
+    // 세션 닉네임도 동기화
+    if (body.nickname) {
+      await updateSession(req, { nickname: body.nickname.trim() });
     }
 
     return NextResponse.json({ ok: true });
