@@ -32,18 +32,18 @@ interface LectureThumbnailProps {
   level?: string;
   price?: string;
   duration?: number;
-  /** 더 이상 필수 아님 — 컨테이너 너비에서 자동 계산 */
+  position?: string;
   height?: number;
 }
 
 export default function LectureThumbnail({
-  game, title, coachName, tier, level, price, duration, height,
+  game, title, coachName, tier, level, price, duration, position, height,
 }: LectureThumbnailProps) {
   const g = GAME_TOKENS[game] ?? DEFAULT_TOKEN;
   const mins = duration ? `${duration}분` : '';
   const chipParts = [g.cat, level, mins].filter(Boolean);
   const chipLabel = chipParts.join(' · ');
-  const shortTitle = title.length > 20 ? title.slice(0, 20) + '…' : title;
+  const shortTitle = title.length > 18 ? title.slice(0, 18) + '…' : title;
 
   // ── 반응형 스케일 계산 ──
   const containerRef = useRef<HTMLDivElement>(null);
@@ -99,21 +99,24 @@ export default function LectureThumbnail({
           {g.sym}
         </div>
 
-        {/* 왼쪽: 게임 라벨 + 워드마크 */}
+        {/* 왼쪽: 게임 워드마크 + 포지션 */}
         <div style={{ position:'absolute', left:28, top:26, maxWidth:230 }}>
-          <div style={{
-            fontSize:12, fontWeight:800, letterSpacing:'0.18em',
-            color:g.accent, textTransform:'uppercase',
-          }}>
-            {g.full}
-          </div>
           <div style={{
             fontFamily:'Archivo, "Impact", "Arial Black", sans-serif',
             fontSize:50, fontWeight:900, color:'#fff',
-            lineHeight:0.92, marginTop:8, letterSpacing:'-0.02em',
+            lineHeight:0.92, letterSpacing:'-0.02em',
           }}>
             {g.short}
           </div>
+          {position && (
+            <div style={{
+              fontSize:13, fontWeight:700, color: g.accent,
+              marginTop:10, letterSpacing:'0.04em', textTransform:'lowercase',
+              fontFamily:'"JetBrains Mono","Courier New",monospace',
+            }}>
+              {position}
+            </div>
+          )}
         </div>
 
         {/* 오른쪽: 칩 + 제목 */}

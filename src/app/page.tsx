@@ -28,9 +28,9 @@ const CATEGORIES = [
 ];
 
 const FEATURED = [
-  { id:'dragonking', name:'DragonKing', game:'League of Legends', cat:'moba', tier:'챌린저',       position:'정글',   price:0.05,  rating:4.9,  reviews:127, avi:2, online:true,  tagline:'정글 동선·오브젝트 설계로 게임을 읽는 법을 가르칩니다.' },
-  { id:'shadowace',  name:'ShadowAce',  game:'Valorant',          cat:'fps',  tier:'다이아 2',      position:'타격대', price:0.04,  rating:4.80, reviews:89,  avi:0, online:false, tagline:'에임 루틴과 엔트리 동선으로 라운드 주도권을 잡으세요.' },
-  { id:'frostqueen', name:'FrostQueen', game:'Overwatch 2',        cat:'team', tier:'그랜드마스터',  position:'서포터', price:0.045, rating:4.95, reviews:64,  avi:5, online:true,  tagline:'힐러 포지셔닝과 궁극기 운용으로 팀파이트를 설계합니다.' },
+  { id:'dragonking', name:'DragonKing', game:'League of Legends', cat:'moba', tier:'챌린저',       position:'jungle',  price:0.05,  rating:4.9,  reviews:127, avi:2, online:true,  slogan:'정글의 모든 디테일을 여기서',      tagline:'정글 동선·오브젝트 설계로 게임을 읽는 법을 가르칩니다.' },
+  { id:'shadowace',  name:'ShadowAce',  game:'Valorant',          cat:'fps',  tier:'다이아 2',      position:'duelist', price:0.04,  rating:4.80, reviews:89,  avi:0, online:false, slogan:'1등을 꺾는 에임, 지금 시작하세요',  tagline:'에임 루틴과 엔트리 동선으로 라운드 주도권을 잡으세요.' },
+  { id:'frostqueen', name:'FrostQueen', game:'Overwatch 2',        cat:'team', tier:'그랜드마스터',  position:'support', price:0.045, rating:4.95, reviews:64,  avi:5, online:true,  slogan:'팀파이트는 힐러가 설계합니다',      tagline:'힐러 포지셔닝과 궁극기 운용으로 팀파이트를 설계합니다.' },
 ];
 
 const LESSONS = [
@@ -96,10 +96,11 @@ function CoachCard({ c, big = false }: { c: typeof FEATURED[0]; big?: boolean })
     <Link href={`/coaches/${c.id}`} className="card hover-lift" style={{ overflow:'hidden', display:'block', textDecoration:'none' }}>
       <LectureThumbnail
         game={c.game}
-        title={c.tagline}
+        title={c.slogan}
         coachName={c.name}
         tier={c.tier}
         price={String(c.price)}
+        position={c.position}
         height={big ? 190 : 130}
       />
       <div style={{ padding: '14px 16px 16px' }}>
