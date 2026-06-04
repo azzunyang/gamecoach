@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GameCoach 발표자료</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', -apple-system, sans-serif;
+    background: #0e0e0e;
+    color: #f0f0f0;
+    overflow: hidden;
+  }
+
+  .slides { width: 100vw; height: 100vh; position: relative; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: none;
+    padding: 64px 80px;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .slide.active { display: flex; }
+
+  /* ── 배경 변형 ── */
+  .slide-dark  { background: #0e0e0e; }
+  .slide-light { background: #f5f4f0; color: #16160f; }
+  .slide-green { background: #0e1a05; }
+  .slide-blue  { background: #050e1a; }
+  .slide-purple{ background: #100a1a; }
+
+  /* ── 타이포 ── */
+  .eyebrow {
+    font-size: 12px; font-weight: 800; letter-spacing: .18em;
+    text-transform: uppercase; color: #c9f24d; margin-bottom: 16px;
+  }
+  .slide-light .eyebrow { color: #5a7a00; }
+
+  h1 { font-size: 64px; font-weight: 900; line-height: 1.05; letter-spacing: -.03em; }
+  h2 { font-size: 42px; font-weight: 900; line-height: 1.1;  letter-spacing: -.02em; }
+  h3 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+  p  { font-size: 18px; line-height: 1.7; color: #aaa; }
+  .slide-light p { color: #555; }
+
+  .accent { color: #c9f24d; }
+  .muted  { color: #666; font-size: 14px; }
+
+  /* ── 레이아웃 유틸 ── */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+  .col   { display: flex; flex-direction: column; gap: 16px; }
+  .row   { display: flex; align-items: center; gap: 12px; }
+
+  /* ── 카드 ── */
+  .card {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 16px;
+    padding: 28px 32px;
+  }
+  .slide-light .card {
+    background: #fff;
+    border-color: #e0e0d8;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  }
+  .card-accent {
+    background: rgba(201,242,77,.08);
+    border-color: rgba(201,242,77,.3);
+  }
+
+  /* ── 번호 배지 ── */
+  .num {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: #c9f24d; color: #16160f;
+    font-weight: 900; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── 태그 ── */
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 999px;
+    font-size: 13px; font-weight: 700; letter-spacing: .01em;
+  }
+  .tag-green  { background: rgba(201,242,77,.15); color: #c9f24d; border: 1px solid rgba(201,242,77,.3); }
+  .tag-blue   { background: rgba(59,130,246,.15);  color: #93c5fd; border: 1px solid rgba(59,130,246,.3); }
+  .tag-orange { background: rgba(251,146,60,.15);  color: #fdba74; border: 1px solid rgba(251,146,60,.3); }
+  .tag-purple { background: rgba(167,139,250,.15); color: #c4b5fd; border: 1px solid rgba(167,139,250,.3); }
+
+  /* ── 플로우 화살표 ── */
+  .flow {
+    display: flex; align-items: center; gap: 0;
+    flex-wrap: nowrap; margin-top: 8px;
+  }
+  .flow-step {
+    flex: 1; text-align: center;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 12px; padding: 14px 8px;
+    font-size: 13px; font-weight: 700; line-height: 1.4;
+  }
+  .flow-arrow {
+    font-size: 20px; color: #c9f24d; padding: 0 6px; flex-shrink: 0;
+  }
+
+  /* ── 테이블 ── */
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th { text-align: left; padding: 10px 16px; background: rgba(201,242,77,.12); color: #c9f24d; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+  td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.07); line-height: 1.5; }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── 브랜드 헤더 ── */
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 48px;
+  }
+  .brand-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: #c9f24d; color: #16160f;
+    font-weight: 900; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-name { font-weight: 900; font-size: 20px; letter-spacing: -.02em; }
+
+  /* ── 페이지네이션 ── */
+  .nav {
+    position: fixed; bottom: 32px; right: 48px;
+    display: flex; align-items: center; gap: 16px;
+    z-index: 100;
+  }
+  .nav button {
+    background: rgba(255,255,255,.1); border: none; color: #fff;
+    width: 40px; height: 40px; border-radius: 10px;
+    font-size: 18px; cursor: pointer; transition: background .15s;
+  }
+  .nav button:hover { background: rgba(201,242,77,.3); }
+  .page-num { font-size: 13px; color: #666; font-variant-numeric: tabular-nums; }
+
+  /* ── 진행 바 ── */
+  .progress {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: #c9f24d; transition: width .3s ease;
+  }
+
+  /* ── 키보드 힌트 ── */
+  .hint {
+    position: fixed; bottom: 32px; left: 48px;
+    font-size: 12px; color: #444;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<!-- ────────────────────────────────────────────
+  SLIDE 1 · 표지
+──────────────────────────────────────────── -->
+<div class="slides">
+<div class="slide slide-dark active" id="s1">
+  <div class="brand">
+    <div class="brand-icon">G</div>
+    <span class="brand-name">GameCoach</span>
+  </div>
+
+  <div class="eyebrow">Web3 Game Coaching Platform</div>
+  <h1>검증된 고수에게<br><span class="accent">1:1로 배우다</span></h1>
+
+  <p style="margin-top:32px; max-width:560px;">
+    블록체인 에스크로로 안전하게 결제하고,<br>
+    챌린저·그랜드마스터 코치에게 직접 코칭받는 플랫폼
+  </p>
+
+  <div class="row" style="margin-top:48px; gap:16px; flex-wrap:wrap;">
+    <span class="tag tag-green">Ethereum Sepolia</span>
+    <span class="tag tag-blue">Cloudflare Pages + D1</span>
+    <span class="tag tag-orange">Next.js 15 · React 19</span>
+    <span class="tag tag-purple">MetaMask 연동</span>
+  </div>
+
+  <div style="position:absolute; right:80px; bottom:80px; text-align:right;">
+    <div style="font-size:80px; font-weight:900; color:rgba(201,242,77,.08); letter-spacing:-.04em; line-height:1;">GAME<br>COACH</div>
+  </div>
+</div>
+
+<!-- ────────────────────────────────────────────
+  SLIDE 2 · 서비스 개요
+──────────────────────────────────────────── -->
+<div class="slide slide-dark" id="s2">
+  <div class="eyebrow">서비스 개요</div>
+  <h2 style="margin-bottom:40px;">GameCoach 란?</h2>
+
+  <div class="grid2" style="gap:40px;">
+    <div class="col">
+      <div class="card card-accent">
+        <h3>🎮 핵심 가치</h3>
+        <p style="margin-top:8px;">게임 실력 향상을 원하는 플레이어와 검증된 고티어 코치를 연결하는 <strong style="color:#c9f24d;">1:1 코칭 마켓플레이스</strong></p>
+      </div>
+      <div class="card">
+        <h3>🔗 Web3 차별점</h3>
+        <p style="margin-top:8px;">기존 결제 대신 <strong style="color:#c9f24d;">스마트 컨트랙트 에스크로</strong>를 사용해 수업료를 안전하게 보관하고, 완료 후 자동 정산</p>
+      </div>
+    </div>
+
+    <div class="col" style="gap:20px;">
+      <div style="display:flex; align-items:flex-start; gap:16px;">
+        <div class="num">1</div>
+        <div><h3>코치 탐색</h3><p style="font-size:15px;">게임 · 티어 · 가격으로 필터링, 강의 커리큘럼과 후기 확인</p></div>
+      </div>
+      <div style="display:flex; align-items:flex-start; gap:16px;">
+        <div class="num">2</div>
+        <div><h3>슬롯 예약 & 선납</h3><p style="font-size:15px;">원하는 날짜 선택, ETH 30% 예약금을 스마트 컨트랙트에 예치</p></div>
+      </div>
+      <div style="display:flex; align-items:flex-start; gap:16px;">
+        <div class="num">3</div>
+        <div><h3>1:1 Discord 코칭</h3><p style="font-size:15px;">음성 + 화면 공유로 실시간 맞춤 코칭 진행</p></div>
+      </div>
+      <div style="display:flex; align-items:flex-start; gap:16px;">
+        <div class="num">4</div>
+        <div><h3>완료 확인 & 자동 정산</h3><p style="font-size:15px;">학생이 완료 버튼 → 잔금 포함 전액이 코치 지갑에 자동 전송</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ────────────────────────────────────────────
+  SLIDE 3 · 주요 기능
+──────────────────────────────────────────── -->
+<div class="slide slide-light" id="s3">
+  <div class="eyebrow">주요 기능</div>
+  <h2 style="margin-bottom:36px;">플랫폼이 제공하는 것들</h2>
+
+  <div class="grid3">
+    <div class="card">
+      <div style="font-size:32px; margin-bottom:12px;">🔍</div>
+      <h3>코치 탐색 & 강의</h3>
+      <p style="font-size:14px; margin-top:8px;">게임·카테고리·별점·가격으로 필터링. 코치별 강의 목록, 커리큘럼, 수강 후기 열람</p>
+    </div>
+    <div class="card">
+      <div style="font-size:32px; margin-bottom:12px;">💳</div>
+      <h3>MetaMask 지갑 인증</h3>
+      <p style="font-size:14px; margin-top:8px;">전화번호 OTP + MetaMask 서명으로 본인 확인. 지갑 주소 기반 신원 보장</p>
+    </div>
+    <div class="card">
+      <div style="font-size:32px; margin-bottom:12px;">📅</div>
+      <h3>슬롯 예약 시스템</h3>
+      <p style="font-size:14px; margin-top:8px;">코치가 가능 시간대를 등록하면 학생이 선택. 중복 예약 방지</p>
+    </div>
+    <div class="card">
+      <div style="font-size:32px; margin-bottom:12px;">💬</div>
+      <h3>수업 내 채팅</h3>
+      <p style="font-size:14px; margin-top:8px;">예약 완료된 수업 전용 채팅방 제공. 코치·학생 간 소통 및 일정 조율</p>
+    </div>
+    <div class="card">
+      <div style="font-size:32px; margin-bottom:12px;">⭐</div>
+      <h3>검증 리뷰 시스템</h3>
+      <p style="font-size:14px; margin-top:8px;">수업 완료 학생만 후기 작성 가능. 설명·소통·시간·커리큘럼 4항목 평가</p>
+    </div>
+    <div class="card">
+      <div style="font-size:32px; margin-bottom:12px;">🛡️</div>
+      <h3>관리자 대시보드</h3>
+      <p style="font-size:14px; margin-top:8px;">코치 승인·정지, 신고 처리, 분쟁 해결. 플랫폼 통계 모니터링</p>
+    </div>
+  </div>
+</div>
+
+<!-- ────────────────────────────────────────────
+  SLIDE 4 · 블록체인 활용
+──────────────────────────────────────────── -->
+<div class="slide slide-green" id="s4">
+  <div class="eyebrow">블록체인 활용</div>
+  <h2 style="margin-bottom:12px;">왜 블록체인이 필요한가?</h2>
+  <p style="margin-bottom:36px; max-width:600px;">코치가 수업 후 돈을 받지 못하거나, 학생이 수업 전 환불을 못 받는 신뢰 문제를 <span style="color:#c9f24d;">코드로 해결</span></p>
+
+  <div class="grid2" style="gap:32px;">
+    <div>
+      <div class="card card-accent" style="margin-bottom:20px;">
+        <h3>📌 네트워크: Ethereum Sepolia Testnet</h3>
+        <p style="font-size:14px; margin-top:8px;">실제 이더리움과 동일한 구조의 테스트넷. 메인넷 배포 전 검증용</p>
+      </div>
+      <div class="card">
+        <h3>🔐 에스크로 구조</h3>
+        <p style="font-size:14px; margin-top:8px; line-height:1.8;">
+          • 예약 시 <strong style="color:#c9f24d;">30%</strong> 선납 → 컨트랙트 잠금<br>
+          • 수업 시작 전 <strong style="color:#c9f24d;">70%</strong> 추가 납부<br>
+          • 수업 완료 후 <strong style="color:#c9f24d;">100%</strong> 코치 지갑으로 자동 전송<br>
+          • 코치 거절 시 <strong style="color:#c9f24d;">즉시 자동 환불</strong>
+        </p>
+      </div>
+    </div>
+
+    <div>
+      <h3 style="margin-bottom:16px; color:#c9f24d;">수업 진행 상태 흐름</h3>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div class="flow">
+          <div class="flow-step">IDLE<br><span style="font-weight:400; font-size:11px; color:#888;">초기</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">PENDING<br><span style="font-weight:400; font-size:11px; color:#888;">예약 요청</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">ACCEPTED<br><span style="font-weight:400; font-size:11px; color:#888;">코치 수락</span></div>
+        </div>
+        <div class="flow">
+          <div class="flow-step">ACTIVE<br><span style="font-weight:400; font-size:11px; color:#888;">수업 진행</span></div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step" style="border-color:rgba(201,242,77,.4);">COMPLETED<br><span style="font-weight:400; font-size:11px; color:#c9f24d;">정산 완료</span></div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:4px;">
+          <div class="flow-step" style="flex:1; border-color:rgba(251,146,60,.3);">REJECTED<br><span style="font-weight:400; font-size:11px; color:#fdba74;">거절 → 즉시 환불</span></div>
+          <div class="flow-step" style="flex:1; border-color:rgba(167,139,250,.3);">DISPUTED<br><span style="font-weight:400; font-size:11px; color:#c4b5fd;">분쟁 → 관리자 판정</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ────────────────────────────────────────────
+  SLIDE 5 · 스마트 컨트랙트
+──────────────────────────────────────────── -->
+<div class="slide slide-dark" id="s5">
+  <div class="eyebrow">스마트 컨트랙트</div>
+  <h2 style="margin-bottom:32px;">GameCoachEscrow.sol</h2>
+
+  <div class="grid2" style="gap:40px; align-items:start;">
+    <div>
+      <table>
+        <thead>
+          <tr><th>함수</th><th>호출자</th><th>동작</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code style="color:#c9f24d;">requestLesson</code></td>
+            <td><span class="tag tag-blue" style="font-size:11px;">학생</span></td>
+            <td>30% ETH 예치, 수업 생성</td>
+          </tr>
+          <tr>
+            <td><code style="color:#c9f24d;">acceptLesson</code></td>
+            <td><span class="tag tag-orange" style="font-size:11px;">코치</span></td>
+            <td>수업 수락 → ACCEPTED</td>
+          </tr>
+          <tr>
+            <td><code style="color:#c9f24d;">rejectLesson</code></td>
+            <td><span class="tag tag-orange" style="font-size:11px;">코치</span></td>
+            <td>거절 → 예약금 즉시 환불</td>
+          </tr>
+          <tr>
+            <td><code style="color:#c9f24d;">payBalance</code></td>
+            <td><span class="tag tag-blue" style="font-size:11px;">학생</span></td>
+            <td>잔금 70% 추가 예치</td>
+          </tr>
+          <tr>
+            <td><code style="color:#c9f24d;">confirmCompletion</code></td>
+            <td><span class="tag tag-blue" style="font-size:11px;">학생</span></td>
+            <td>전액 코치 지갑으로 전송</td>
+          </tr>
+          <tr>
+            <td><code style="color:#c9f24d;">cancelLesson</code></td>
+            <td><span class="tag tag-blue" style="font-size:11px;">학생</span></td>
+            <td>취소 → 전액 환불</td>
+          </tr>
+          <tr>
+            <td><code style="color:#c9f24d;">resolveDispute</code></td>
+            <td><span class="tag tag-purple" style="font-size:11px;">관리자</span></td>
+            <td>분쟁 판정 → 승자에게 전송</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col">
+      <div class="card card-accent">
+        <h3>💡 에스크로의 신뢰 보장</h3>
+        <p style="font-size:14px; margin-top:8px; line-height:1.8;">
+          • 결제금은 <strong style="color:#c9f24d;">플랫폼이 아닌 컨트랙트가 보관</strong><br>
+          • 누구도 임의로 빼갈 수 없음<br>
+          • 모든 거래 이력이 <strong style="color:#c9f24d;">블록체인에 영구 기록</strong><br>
+          • 조건 충족 시 코드가 자동 실행
+        </p>
+      </div>
+      <div class="card">
+        <h3>🔑 인증 방식</h3>
+        <p style="font-size:14px; margin-top:8px; line-height:1.8;">
+          전화번호 OTP 인증 후 MetaMask로<br>
+          <strong style="color:#c9f24d;">개인 키 서명</strong>을 통한 지갑 소유 증명<br>
+          (비밀번호 불필요, 지갑이 곧 신원)
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ────────────────────────────────────────────
+  SLIDE 6 · 저장 데이터
+──────────────────────────────────────────── -->
+<div class="slide slide-blue" id="s6">
+  <div class="eyebrow">데이터 구조</div>
+  <h2 style="margin-bottom:32px;">어디에 무엇이 저장되는가?</h2>
+
+  <div class="grid2" style="gap:32px; align-items:start;">
+    <!-- Off-chain -->
+    <div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+        <span class="tag tag-blue">Cloudflare D1 (SQLite)</span>
+        <span class="muted">오프체인</span>
+      </div>
+      <table>
+        <thead><tr><th>테이블</th><th>저장 내용</th></tr></thead>
+        <tbody>
+          <tr><td><strong>users</strong></td><td>전화번호, 지갑 주소, 역할(코치/학생)</td></tr>
+          <tr><td><strong>coaches</strong></td><td>닉네임, 게임, 티어, 가격, 소개, 커리큘럼</td></tr>
+          <tr><td><strong>lectures</strong></td><td>강의 제목, 설명, 레벨, 가격, 게시 여부</td></tr>
+          <tr><td><strong>slots</strong></td><td>코치 가능 날짜·시간, 예약 여부</td></tr>
+          <tr><td><strong>lessons</strong></td><td>수업 상태, 트랜잭션 해시, 예약금/잔금</td></tr>
+          <tr><td><strong>reviews</strong></td><td>4항목 점수(1-5), 후기 텍스트</td></tr>
+          <tr><td><strong>messages</strong></td><td>수업별 채팅 메시지</td></tr>
+          <tr><td><strong>reports</strong></td><td>코치 신고 내역</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- On-chain + KV -->
+    <div class="col">
+      <div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+          <span class="tag tag-green">Ethereum Sepolia</span>
+          <span class="muted">온체인</span>
+        </div>
+        <div class="card">
+          <p style="font-size:14px; line-height:1.8;">
+            • <strong style="color:#c9f24d;">lessons 맵</strong> — lessonId → (학생 주소, 코치 주소, 예치금, 상태)<br>
+            • <strong style="color:#c9f24d;">이벤트 로그</strong> — 모든 상태 변경 영구 기록<br>
+            • 분쟁 발생 시 온체인 기록이 증거
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+          <span class="tag tag-purple">Cloudflare KV</span>
+          <span class="muted">세션</span>
+        </div>
+        <div class="card">
+          <p style="font-size:14px; line-height:1.8;">
+            • 로그인 세션 토큰 저장<br>
+            • 엣지 네트워크 전역 접근<br>
+            • TTL 기반 자동 만료
+          </p>
+        </div>
+      </div>
+
+      <div class="card card-accent">
+        <h3>⚠️ 개인정보 최소화 원칙</h3>
+        <p style="font-size:13px; margin-top:6px;">실명·이메일 미수집. 전화번호 + 지갑 주소만으로 인증. Discord ID는 선택 연동.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ────────────────────────────────────────────
+  SLIDE 7 · 기술 스택
+──────────────────────────────────────────── -->
+<div class="slide slide-light" id="s7">
+  <div class="eyebrow">기술 스택</div>
+  <h2 style="margin-bottom:36px;">사용된 기술들</h2>
+
+  <div class="grid2" style="gap:32px;">
+    <div class="col">
+      <div class="card">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <span style="font-size:28px;">⚡</span>
+          <div><h3 style="margin:0;">프론트엔드 / 서버</h3></div>
+        </div>
+        <table>
+          <tbody>
+            <tr><td><strong>Next.js 15</strong></td><td>App Router, Edge Runtime</td></tr>
+            <tr><td><strong>React 19</strong></td><td>최신 클라이언트 UI</td></tr>
+            <tr><td><strong>Cloudflare Pages</strong></td><td>글로벌 엣지 배포</td></tr>
+            <tr><td><strong>TypeScript</strong></td><td>전체 타입 안전</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <span style="font-size:28px;">🗄️</span>
+          <div><h3 style="margin:0;">데이터</h3></div>
+        </div>
+        <table>
+          <tbody>
+            <tr><td><strong>Cloudflare D1</strong></td><td>SQLite 기반 엣지 DB</td></tr>
+            <tr><td><strong>Cloudflare KV</strong></td><td>세션 / 캐시 스토어</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <span style="font-size:28px;">🔗</span>
+          <div><h3 style="margin:0;">블록체인</h3></div>
+        </div>
+        <table>
+          <tbody>
+            <tr><td><strong>Solidity 0.8.24</strong></td><td>스마트 컨트랙트</td></tr>
+            <tr><td><strong>Hardhat</strong></td><td>컨트랙트 컴파일·배포</td></tr>
+            <tr><td><strong>ethers.js v6</strong></td><td>프론트-컨트랙트 연결</td></tr>
+            <tr><td><strong>MetaMask</strong></td><td>지갑 연결·트랜잭션 서명</td></tr>
+            <tr><td><strong>Ethereum Sepolia</strong></td><td>테스트넷 배포</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <span style="font-size:28px;">🔐</span>
+          <div><h3 style="margin:0;">인증</h3></div>
+        </div>
+        <table>
+          <tbody>
+            <tr><td><strong>OTP (전화번호)</strong></td><td>회원가입·로그인</td></tr>
+            <tr><td><strong>Discord OAuth</strong></td><td>선택 연동</td></tr>
+            <tr><td><strong>ETH 서명 검증</strong></td><td>지갑 소유권 증명</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ────────────────────────────────────────────
+  SLIDE 8 · 마무리
+──────────────────────────────────────────── -->
+<div class="slide slide-dark" id="s8">
+  <div class="eyebrow">Summary</div>
+  <h2 style="margin-bottom:40px;">정리하면</h2>
+
+  <div class="grid3" style="margin-bottom:40px;">
+    <div class="card card-accent" style="text-align:center; padding:32px 20px;">
+      <div style="font-size:42px; margin-bottom:12px;">🎮</div>
+      <h3>코칭 마켓플레이스</h3>
+      <p style="font-size:14px; margin-top:8px;">게임별 전문 코치 탐색 · 강의 · 예약 · 수강 · 리뷰 전 과정 원스톱</p>
+    </div>
+    <div class="card" style="text-align:center; padding:32px 20px;">
+      <div style="font-size:42px; margin-bottom:12px;">⛓️</div>
+      <h3>블록체인 에스크로</h3>
+      <p style="font-size:14px; margin-top:8px;">수업료를 스마트 컨트랙트가 보관 → 완료 시 자동 정산, 거절 시 즉시 환불</p>
+    </div>
+    <div class="card" style="text-align:center; padding:32px 20px;">
+      <div style="font-size:42px; margin-bottom:12px;">🌐</div>
+      <h3>엣지 인프라</h3>
+      <p style="font-size:14px; margin-top:8px;">Cloudflare 글로벌 엣지에 Next.js 앱 + D1 DB 배포, 저지연 서비스</p>
+    </div>
+  </div>
+
+  <div class="card" style="background:rgba(201,242,77,.06); border-color:rgba(201,242,77,.2); max-width:700px;">
+    <div class="row">
+      <div style="font-size:28px;">🚀</div>
+      <div>
+        <h3 style="margin-bottom:4px;">배포 주소</h3>
+        <p style="font-size:14px; color:#c9f24d;">https://gamecoach.pages.dev</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute; right:80px; bottom:64px; text-align:right; color:#333;">
+    <div style="font-size:13px;">GitHub · azzunyang/gamecoach</div>
+    <div style="font-size:13px; margin-top:4px;">Ethereum Sepolia · Cloudflare Pages</div>
+  </div>
+</div>
+
+</div><!-- /slides -->
+
+<!-- ── 네비게이션 ── -->
+<div class="nav">
+  <button onclick="prev()">←</button>
+  <span class="page-num" id="pageNum">1 / 8</span>
+  <button onclick="next()">→</button>
+</div>
+
+<div class="hint">← → 방향키 또는 버튼으로 이동</div>
+
+<script>
+  const total = 8;
+  let cur = 1;
+
+  function show(n) {
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    document.getElementById('s' + n).classList.add('active');
+    document.getElementById('pageNum').textContent = n + ' / ' + total;
+    document.getElementById('progress').style.width = (n / total * 100) + '%';
+    cur = n;
+  }
+
+  function next() { if (cur < total) show(cur + 1); }
+  function prev() { if (cur > 1)    show(cur - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); prev(); }
+  });
+
+  show(1);
+</script>
+</body>
+</html>
