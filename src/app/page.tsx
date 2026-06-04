@@ -356,26 +356,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── 최종 CTA ── */}
-        <section style={{ padding:'80px 0', background:'var(--paper)', textAlign:'center', borderTop:'1px solid var(--line)' }}>
-          <div className="container">
-            <p className="eyebrow" style={{ marginBottom:12 }}>지금 시작하세요</p>
-            <h2 className="h2" style={{ marginBottom:14, maxWidth:520, margin:'0 auto 14px' }}>
-              지금 바로 실력 향상을 시작하세요
-            </h2>
-            <p className="sub" style={{ marginBottom:32, fontSize:15 }}>172명의 검증된 코치가 기다리고 있습니다.</p>
-            <div className="row center gap-12 wrap">
-              <Link href="/coaches" className="btn btn-primary btn-lg">
-                <Icon name="compass" size={18} />
-                코치 찾기
-              </Link>
-              <Link href="/auth/register" className="btn btn-accent btn-lg">
-                회원가입하기
-              </Link>
-            </div>
-          </div>
-        </section>
-
         {/* ── 푸터 ── */}
         <footer style={{ borderTop:'1px solid var(--line)', padding:'32px 0', background:'var(--surface)' }}>
           <div className="container row spread wrap gap-16">

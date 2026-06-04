@@ -37,7 +37,7 @@ interface LectureThumbnailProps {
 }
 
 export default function LectureThumbnail({
-  game, title, coachName, tier, level, price, duration,
+  game, title, coachName, tier, level, price, duration, height,
 }: LectureThumbnailProps) {
   const g = GAME_TOKENS[game] ?? DEFAULT_TOKEN;
   const mins = duration ? `${duration}분` : '';
@@ -65,7 +65,7 @@ export default function LectureThumbnail({
       ref={containerRef}
       style={{
         width: '100%',
-        aspectRatio: `${BASE_W} / ${BASE_H}`,
+        ...(height ? { height } : { aspectRatio: `${BASE_W} / ${BASE_H}` }),
         position: 'relative',
         overflow: 'hidden',
       }}

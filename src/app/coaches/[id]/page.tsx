@@ -7,7 +7,6 @@ import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
-import BookingModal from "@/components/BookingModal";
 import LectureThumbnail from "@/components/LectureThumbnail";
 
 const GAME_GRAD: Record<string, [string, string]> = {
@@ -186,7 +185,6 @@ export default function CoachDetailPage() {
   const [lectureFavs, setLectureFavs] = useState<Set<string>>(new Set());
   const [coachFav, setCoachFav] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showBooking, setShowBooking] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -414,37 +412,6 @@ export default function CoachDetailPage() {
               </div>
             )}
 
-            {/* Reviews */}
-            {reviews.length > 0 && (
-              <div className="card card-pad">
-                <h2 className="h3" style={{ marginBottom:16 }}>
-                  수강생 리뷰
-                  <span style={{ fontSize:14, color:'var(--muted)', fontWeight:500, marginLeft:8 }}>({reviews.length}건)</span>
-                </h2>
-                <div className="col gap-0">
-                  {reviews.map((r, i) => {
-                    const avg = ((r.score_explain + r.score_comm + r.score_time + r.score_curr) / 4);
-                    return (
-                      <div key={r.id} style={{ padding:'16px 0', borderBottom: i < reviews.length-1 ? '1px solid var(--line)' : 'none' }}>
-                        <div className="row gap-8" style={{ marginBottom:8 }}>
-                          <div style={{ width:30, height:30, borderRadius:'50%', background:'var(--sunken)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, flexShrink:0 }}>👤</div>
-                          <div>
-                            <div style={{ fontSize:13, fontWeight:700 }}>{r.student_nickname || '익명의 수강생'}</div>
-                            <div className="row gap-2">
-                              {Array.from({length:5}).map((_,j)=>(
-                                <Icon key={j} name="star" size={11} fill style={{ color: j < Math.round(avg) ? '#F5A623' : 'var(--line-strong)' }} />
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        {r.body && <p style={{ fontSize:14, color:'var(--ink-soft)', lineHeight:1.6 }}>{r.body}</p>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             {coach.tier_self === 1 && (
               <div className="notice warn row gap-8">
                 <Icon name="warn" size={15} style={{ flexShrink:0 }} />
@@ -459,29 +426,50 @@ export default function CoachDetailPage() {
             </div>
           </div>
 
-          {/* Right: booking box */}
+          {/* Right: reviews panel */}
           <div className="detail-side">
-            <div className="book-box col gap-16">
-              <div>
-                <div className="row gap-6" style={{ marginBottom:4 }}>
-                  <Icon name="star" size={14} fill style={{ color:'#F5A623' }} />
-                  <span style={{ fontWeight:700 }}>{avgScore}</span>
-                  <span style={{ color:'var(--muted)', fontSize:13 }}>수강후기 {coach.review_count}건</span>
+            <div className="col gap-14">
+
+              {/* 평점 요약 카드 */}
+              <div className="card card-pad">
+                <div className="row gap-0" style={{ justifyContent:'space-around', marginBottom:16 }}>
+                  {[
+                    { val: avgScore, label: '평균 별점' },
+                    { val: `${coach.review_count}건`, label: '수강 후기' },
+                    { val: `${coach.session_min}분`, label: '세션 시간' },
+                  ].map((s, i) => (
+                    <div key={s.label} style={{ textAlign:'center', flex:1, borderRight: i < 2 ? '1px solid var(--line)' : 'none' }}>
+                      <div style={{ fontSize:20, fontWeight:900, fontFamily:'var(--mono)', color:'var(--ink)', marginBottom:3 }}>{s.val}</div>
+                      <div style={{ fontSize:11, color:'var(--muted)', fontWeight:600 }}>{s.label}</div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <span className="eth-amt" style={{ fontSize:24, fontWeight:900 }}>{coach.price_eth} ETH</span>
-                  <span style={{ fontSize:13, color:'var(--muted)', marginLeft:6 }}>/ {coach.session_min}분 세션</span>
-                </div>
+
+                {/* 항목별 평점 */}
+                {reviews.length > 0 && (
+                  <div className="col gap-8">
+                    {[
+                      { label:'설명', key:'score_explain' as const },
+                      { label:'소통', key:'score_comm' as const },
+                      { label:'시간 준수', key:'score_time' as const },
+                      { label:'커리큘럼', key:'score_curr' as const },
+                    ].map(({ label, key }) => {
+                      const avg = reviews.reduce((s, r) => s + r[key], 0) / reviews.length;
+                      return (
+                        <div key={label} className="row gap-10" style={{ alignItems:'center' }}>
+                          <span style={{ fontSize:12, color:'var(--muted)', width:64, flexShrink:0 }}>{label}</span>
+                          <div style={{ flex:1, height:6, borderRadius:3, background:'var(--sunken)', overflow:'hidden' }}>
+                            <div style={{ height:'100%', width:`${(avg/5)*100}%`, background:'#F5A623', borderRadius:3 }} />
+                          </div>
+                          <span style={{ fontSize:12, fontWeight:700, width:24, textAlign:'right' }}>{avg.toFixed(1)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              <button
-                className="btn btn-accent btn-lg btn-block"
-                onClick={() => setShowBooking(true)}
-              >
-                <Icon name="calendar" size={16} />
-                수업 신청하기
-              </button>
-
+              {/* 찜하기 버튼 */}
               <button
                 className="btn btn-outline btn-block"
                 onClick={() => setCoachFav(!coachFav)}
@@ -491,46 +479,51 @@ export default function CoachDetailPage() {
                 {coachFav ? '코치 찜 해제' : '코치 찜하기'}
               </button>
 
-              <div className="divider" style={{ margin:0 }} />
-
-              <div className="col gap-10">
-                {[
-                  { icon:'book', label:'누적 수업', val:`${coach.review_count}건` },
-                  { icon:'star', label:'평균 별점', val:avgScore },
-                  { icon:'clock', label:'세션 시간', val:`${coach.session_min}분` },
-                ].map((row) => (
-                  <div key={row.label} className="row gap-10">
-                    <Icon name={row.icon as "clock"} size={15} style={{ color:'var(--muted)', flexShrink:0 }} />
-                    <span style={{ fontSize:13, color:'var(--muted)', flex:1 }}>{row.label}</span>
-                    <span style={{ fontSize:13, fontWeight:600 }}>{row.val}</span>
+              {/* 후기 리스트 */}
+              <div className="card card-pad">
+                <h2 className="h3" style={{ marginBottom:16 }}>
+                  수강생 후기
+                  <span style={{ fontSize:13, color:'var(--muted)', fontWeight:500, marginLeft:8 }}>({reviews.length}건)</span>
+                </h2>
+                {reviews.length === 0 ? (
+                  <div style={{ textAlign:'center', padding:'24px 0', color:'var(--muted)' }}>
+                    <Icon name="star" size={28} style={{ margin:'0 auto 8px', display:'block' }} />
+                    <div style={{ fontSize:13 }}>아직 후기가 없어요</div>
                   </div>
-                ))}
+                ) : (
+                  <div className="col gap-0">
+                    {reviews.map((r, i) => {
+                      const avg = (r.score_explain + r.score_comm + r.score_time + r.score_curr) / 4;
+                      return (
+                        <div key={r.id} style={{ padding:'14px 0', borderBottom: i < reviews.length - 1 ? '1px solid var(--line)' : 'none' }}>
+                          <div className="row gap-8" style={{ marginBottom:6 }}>
+                            <div style={{ width:30, height:30, borderRadius:'50%', background:'var(--sunken)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, flexShrink:0 }}>👤</div>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ fontSize:13, fontWeight:700, marginBottom:2 }}>{r.student_nickname || '익명의 수강생'}</div>
+                              <div className="row gap-2">
+                                {Array.from({length:5}).map((_,j) => (
+                                  <Icon key={j} name="star" size={10} fill style={{ color: j < Math.round(avg) ? '#F5A623' : 'var(--line-strong)' }} />
+                                ))}
+                                <span style={{ fontSize:11, color:'var(--muted)', marginLeft:3 }}>{avg.toFixed(1)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          {r.body && (
+                            <p style={{ fontSize:13, color:'var(--ink-soft)', lineHeight:1.6, margin:0 }}>{r.body}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              <div className="notice">
-                <Icon name="lock" size={12} style={{ display:'inline', marginRight:5 }} />
-                예약금은 에스크로에 잠기며, 수업 완료 후 코치에게 전달됩니다.
-              </div>
             </div>
           </div>
         </div>
       </main>
       <BottomNav />
 
-      {showBooking && (
-        <BookingModal
-          coach={{
-            id: coach.id,
-            name: coach.nickname,
-            game: gameName,
-            session: coach.session_min,
-            price: parseFloat(coach.price_eth),
-            avi: 0,
-          }}
-          onClose={() => setShowBooking(false)}
-          onBooked={() => setShowBooking(false)}
-        />
-      )}
     </>
   );
 }
