@@ -120,7 +120,7 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
         // 4. 트랜잭션 확정 대기
         setStepMsg("블록체인 확정 대기 중... (약 15~30초)");
         const receipt = await tx.wait();
-        txHash = receipt.hash as string;
+        txHash = receipt?.hash as string;
         setFinalTxHash(txHash);
       }
 
