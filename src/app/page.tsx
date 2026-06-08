@@ -280,7 +280,7 @@ export default function LandingPage() {
             <div className="row spread" style={{ marginBottom:32, alignItems:'flex-end' }}>
               <div>
                 <p className="eyebrow" style={{ marginBottom:6 }}>추천 강의</p>
-                <h2 className="h2">지금 인기 있는 강의</h2>
+                <h2 className="h2">새로 올라온 강의</h2>
               </div>
               <Link href="/coaches" className="btn btn-outline btn-sm">전체 보기</Link>
             </div>
