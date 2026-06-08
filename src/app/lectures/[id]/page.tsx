@@ -8,6 +8,7 @@ import BottomNav from "@/components/BottomNav";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 import LectureThumbnail from "@/components/LectureThumbnail";
+import BookingModal from "@/components/BookingModal";
 
 const GAME_GRAD: Record<string, [string, string]> = {
   'Valorant':          ['#2A1216','#5A1E27'],
@@ -156,6 +157,7 @@ export default function LectureDetailPage() {
   const [isFav, setIsFav] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   useEffect(() => {
     fetch(`/api/lectures/${id}`)
@@ -377,10 +379,13 @@ export default function LectureDetailPage() {
                 <div style={{ fontSize:12, color:'var(--muted)', marginTop:2 }}>{lecture.duration}분 세션</div>
               </div>
 
-              <Link href={`/coaches/${lecture.coach_id}`} className="btn btn-accent btn-lg btn-block">
+              <button
+                className="btn btn-accent btn-lg btn-block"
+                onClick={() => { if (!isLoggedIn) { router.push("/auth/login"); return; } setBookingOpen(true); }}
+              >
                 <Icon name="calendar" size={16} />
                 수업 신청하기
-              </Link>
+              </button>
 
               <button
                 className="btn btn-outline btn-block"
@@ -437,6 +442,20 @@ export default function LectureDetailPage() {
         </div>
       </main>
       <BottomNav />
+      {bookingOpen && lecture && (
+        <BookingModal
+          coach={{
+            id: lecture.coach_id,
+            name: lecture.coach_nickname,
+            game: lecture.game,
+            session: lecture.duration,
+            price: parseFloat(lecture.price_eth),
+            avi: 0,
+          }}
+          onClose={() => setBookingOpen(false)}
+          onBooked={() => setBookingOpen(false)}
+        />
+      )}
     </>
   );
 }
