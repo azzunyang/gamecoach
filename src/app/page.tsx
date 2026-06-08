@@ -6,6 +6,7 @@ import BottomNav from "@/components/BottomNav";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 import LectureThumbnail from "@/components/LectureThumbnail";
+import BookingModal from "@/components/BookingModal";
 
 const GAME_GRAD: Record<string, [string, string]> = {
   'Valorant':          ['#2A1216','#5A1E27'],
@@ -139,6 +140,7 @@ interface ApiLecture {
 
 export default function LandingPage() {
   const [apiLectures, setApiLectures] = useState<ApiLecture[]>([]);
+  const [bookingTarget, setBookingTarget] = useState<ApiLecture | null>(null);
 
   useEffect(() => {
     fetch("/api/lectures?page=1")
@@ -287,18 +289,21 @@ export default function LandingPage() {
             <div className="grid grid-3 gap-16">
               {apiLectures.length > 0
                 ? apiLectures.map((l) => (
-                    <Link key={l.id} href={`/lectures/${l.id}`} style={{ textDecoration:'none' }}>
-                      <div className="card hover-lift" style={{ overflow:'hidden', cursor:'pointer', borderRadius:'var(--r)' }}>
-                        <LectureThumbnail
-                          game={l.game}
-                          title={l.title}
-                          coachName={l.coach_nickname}
-                          level={l.level}
-                          price={l.price_eth}
-                          duration={l.duration}
-                        />
-                      </div>
-                    </Link>
+                    <div
+                      key={l.id}
+                      className="card hover-lift"
+                      style={{ overflow:'hidden', cursor:'pointer', borderRadius:'var(--r)' }}
+                      onClick={() => setBookingTarget(l)}
+                    >
+                      <LectureThumbnail
+                        game={l.game}
+                        title={l.title}
+                        coachName={l.coach_nickname}
+                        level={l.level}
+                        price={l.price_eth}
+                        duration={l.duration}
+                      />
+                    </div>
                   ))
                 : LESSONS.map((l) => <LessonCard key={l.id} l={l} />)
               }
@@ -373,6 +378,20 @@ export default function LandingPage() {
         </footer>
       </main>
       <BottomNav />
+      {bookingTarget && (
+        <BookingModal
+          coach={{
+            id: bookingTarget.coach_id,
+            name: bookingTarget.coach_nickname,
+            game: bookingTarget.game,
+            session: bookingTarget.duration,
+            price: parseFloat(bookingTarget.price_eth),
+            avi: 0,
+          }}
+          onClose={() => setBookingTarget(null)}
+          onBooked={() => setBookingTarget(null)}
+        />
+      )}
     </>
   );
 }
