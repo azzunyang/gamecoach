@@ -90,7 +90,7 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
         const eth = (window as unknown as { ethereum?: unknown }).ethereum;
         if (!eth) throw new Error("MetaMask가 필요합니다. metamask.io에서 설치해주세요.");
 
-        const { BrowserProvider, Contract, parseEther } = await import("ethers");
+        const { BrowserProvider, Interface, parseEther } = await import("ethers");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const provider = new BrowserProvider(eth as any);
 
@@ -101,17 +101,20 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
         }
         await switchToSepolia();
 
-        // 3. 컨트랙트 호출 (예약금 30% 전송)
+        // 3. 컨트랙트 호출 (예약금 30% 전송) — signer.sendTransaction으로 value 명시
         setStepMsg("MetaMask에서 결제를 승인해주세요...");
         const signer = await provider.getSigner();
-        const contract = new Contract(configuredContract, ESCROW_ABI, signer);
+        const iface = new Interface(ESCROW_ABI);
 
         const rawId = crypto.randomUUID().replace(/-/g, "");
         const lessonIdBytes32 = "0x" + rawId.padEnd(64, "0");
+        const depositWei = parseEther(deposit);
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const tx = await (contract.requestLesson as any)(lessonIdBytes32, coachWallet, {
-          value: parseEther(deposit),
+        const calldata = iface.encodeFunctionData("requestLesson", [lessonIdBytes32, coachWallet]);
+        const tx = await signer.sendTransaction({
+          to: configuredContract,
+          data: calldata,
+          value: depositWei,
         });
 
         // 4. 트랜잭션 확정 대기
