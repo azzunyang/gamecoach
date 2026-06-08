@@ -74,19 +74,17 @@ function CoachThumb({ game, h = 160, glyph }: { game: string; h?: number; glyph?
 }
 
 /* ── 강의 썸네일 카드 (모크 폴백) ── */
-function LessonCard({ l }: { l: typeof LESSONS[0] }) {
+function LessonCard({ l, onBook }: { l: typeof LESSONS[0]; onBook: () => void }) {
   return (
-    <Link href={`/coaches/${l.coachId}`} style={{ textDecoration:'none' }}>
-      <div className="card hover-lift" style={{ overflow:'hidden', cursor:'pointer' }}>
-        <LectureThumbnail
-          game={l.game}
-          title={l.title}
-          coachName={l.coach}
-          price={String(l.price)}
-          duration={l.duration}
-        />
-      </div>
-    </Link>
+    <div className="card hover-lift" style={{ overflow:'hidden', cursor:'pointer' }} onClick={onBook}>
+      <LectureThumbnail
+        game={l.game}
+        title={l.title}
+        coachName={l.coach}
+        price={String(l.price)}
+        duration={l.duration}
+      />
+    </div>
   );
 }
 
@@ -305,7 +303,17 @@ export default function LandingPage() {
                       />
                     </div>
                   ))
-                : LESSONS.map((l) => <LessonCard key={l.id} l={l} />)
+                : LESSONS.map((l) => (
+                    <LessonCard
+                      key={l.id}
+                      l={l}
+                      onBook={() => setBookingTarget({
+                        id: l.id, title: l.title, game: l.game, game_category: '',
+                        price_eth: String(l.price), duration: l.duration, level: '',
+                        coach_id: l.coachId, coach_nickname: l.coach,
+                      })}
+                    />
+                  ))
               }
             </div>
             {apiLectures.length === 0 && (

@@ -381,7 +381,7 @@ export default function LectureDetailPage() {
 
               <button
                 className="btn btn-accent btn-lg btn-block"
-                onClick={() => { if (!isLoggedIn) { router.push("/auth/login"); return; } setBookingOpen(true); }}
+                onClick={() => setBookingOpen(true)}
               >
                 <Icon name="calendar" size={16} />
                 수업 신청하기
