@@ -7,6 +7,7 @@ import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 import LectureThumbnail from "@/components/LectureThumbnail";
 import Link from "next/link";
+import { callEscrow } from "@/lib/web3";
 
 interface Lesson {
   id: string;
@@ -17,6 +18,7 @@ interface Lesson {
   session: number;
   state: string;
   price: number;
+  contract_addr?: string;
 }
 
 const MOCK_LESSONS: Lesson[] = [
@@ -65,15 +67,22 @@ export default function StudentDashboard() {
       .catch(() => {});
   };
 
-  const completeLesson = async (id: string) => {
+  const completeLesson = async (id: string, contractAddr?: string) => {
     if (!confirm("수업 완료를 확인하시겠습니까?\n확인 즉시 코치에게 수업료가 전송됩니다.")) return;
-    const res = await fetch(`/api/lessons/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "COMPLETED" }),
-    });
-    if (res.ok) loadLessons();
-    else alert("처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+    try {
+      if (contractAddr) {
+        await callEscrow(contractAddr, "confirmCompletion", id);
+      }
+      const res = await fetch(`/api/lessons/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "COMPLETED" }),
+      });
+      if (res.ok) loadLessons();
+      else alert("처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+    } catch (e) {
+      alert((e as Error).message ?? "처리 중 오류가 발생했습니다.");
+    }
   };
 
   useEffect(() => {
@@ -185,7 +194,7 @@ export default function StudentDashboard() {
                         {(l.state === 'ACCEPTED' || l.state === 'ACTIVE') && (
                           <button
                             className="btn btn-accent btn-xs"
-                            onClick={() => completeLesson(l.id)}
+                            onClick={() => completeLesson(l.id, l.contract_addr)}
                           >
                             <Icon name="check" size={11} />
                             수업 완료

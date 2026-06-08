@@ -49,10 +49,10 @@ export async function POST(req: NextRequest) {
     if (!d1) return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
 
     const body = await req.json() as {
-      coachId: string; slotId?: string; date?: string; time?: string;
+      lessonId?: string; coachId: string; slotId?: string; date?: string; time?: string;
       goal?: string; txHash?: string; contractAddr?: string; depositEth?: string; balanceEth?: string;
     };
-    const { coachId, date, time, goal, txHash, contractAddr, depositEth, balanceEth } = body;
+    const { lessonId: clientLessonId, coachId, date, time, goal, txHash, contractAddr, depositEth, balanceEth } = body;
 
     if (!coachId) {
       return NextResponse.json({ error: "coachId가 필요합니다" }, { status: 400 });
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       ).bind(finalSlotId, coachId, slotDate, slotTime, slotTime).run();
     }
 
-    const lessonId = crypto.randomUUID();
+    const lessonId = clientLessonId ?? crypto.randomUUID();
     await d1.prepare(
       `INSERT INTO lessons (id, coach_id, student_id, slot_id, contract_addr, tx_hash, state, deposit_eth, balance_eth, created_at)
        VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, unixepoch())`

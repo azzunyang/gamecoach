@@ -7,12 +7,14 @@ import TopNav from "@/components/TopNav";
 import BottomNav from "@/components/BottomNav";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
+import { callEscrow } from "@/lib/web3";
 
 interface LessonRow {
   id: string;
   student_id: string;
   student_nickname: string;
   coach_id: string;
+  contract_addr: string;
   game_category: string;
   tier: string;
   state: string;
@@ -65,22 +67,36 @@ function CoachDashboardContent() {
   const requests = allLessons.filter((l) => l.state === 'PENDING');
   const upcoming = allLessons.filter((l) => ['ACCEPTED', 'ACTIVE'].includes(l.state));
 
-  const acceptReq = async (id: string) => {
-    await fetch(`/api/lessons/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "ACCEPTED" }),
-    });
-    loadLessons();
+  const acceptReq = async (id: string, contractAddr: string) => {
+    try {
+      if (contractAddr) {
+        await callEscrow(contractAddr, "acceptLesson", id);
+      }
+      await fetch(`/api/lessons/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "ACCEPTED" }),
+      });
+      loadLessons();
+    } catch (e) {
+      alert((e as Error).message ?? "수락 처리 중 오류가 발생했습니다.");
+    }
   };
 
-  const rejectReq = async (id: string) => {
-    await fetch(`/api/lessons/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "REJECTED" }),
-    });
-    loadLessons();
+  const rejectReq = async (id: string, contractAddr: string) => {
+    try {
+      if (contractAddr) {
+        await callEscrow(contractAddr, "rejectLesson", id);
+      }
+      await fetch(`/api/lessons/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "REJECTED" }),
+      });
+      loadLessons();
+    } catch (e) {
+      alert((e as Error).message ?? "거절 처리 중 오류가 발생했습니다.");
+    }
   };
 
   const togglePublish = async (lec: Lecture) => {
@@ -205,8 +221,8 @@ function CoachDashboardContent() {
                         <div style={{ fontSize:12, color:'var(--muted)', whiteSpace:'nowrap' }}>{req.deposit_eth} ETH</div>
                       </div>
                       <div className="row gap-8">
-                        <button className="btn btn-danger btn-sm" onClick={() => rejectReq(req.id)}>거절</button>
-                        <button className="btn btn-accent btn-sm" onClick={() => acceptReq(req.id)}>
+                        <button className="btn btn-danger btn-sm" onClick={() => rejectReq(req.id, req.contract_addr)}>거절</button>
+                        <button className="btn btn-accent btn-sm" onClick={() => acceptReq(req.id, req.contract_addr)}>
                           <Icon name="check" size={13} />
                           수락
                         </button>

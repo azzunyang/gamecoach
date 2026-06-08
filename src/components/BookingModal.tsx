@@ -71,6 +71,7 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
 
     let txHash: string | undefined;
     let contractAddr: string | undefined;
+    let clientLessonId: string | undefined;
 
     try {
       const configuredContract = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
@@ -106,8 +107,9 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
         const signer = await provider.getSigner();
         const iface = new Interface(ESCROW_ABI);
 
-        const rawId = crypto.randomUUID().replace(/-/g, "");
-        const lessonIdBytes32 = "0x" + rawId.padEnd(64, "0");
+        // DB UUID와 동일한 ID를 컨트랙트에도 사용 (수락/거절/완료 시 bytes32로 변환해 재사용)
+        clientLessonId = crypto.randomUUID();
+        const lessonIdBytes32 = "0x" + clientLessonId.replace(/-/g, "").padEnd(64, "0");
         const depositWei = parseEther(deposit);
 
         const calldata = iface.encodeFunctionData("requestLesson", [lessonIdBytes32, coachWallet]);
@@ -130,6 +132,7 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          lessonId: clientLessonId,
           coachId: coach.id,
           date: dateStr,
           time,

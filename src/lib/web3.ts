@@ -72,6 +72,31 @@ export const ESCROW_ABI = [
   "event LessonCompleted(bytes32 indexed id)",
 ];
 
+// lessonId(UUID) → bytes32 변환
+export function lessonIdToBytes32(lessonId: string): string {
+  return "0x" + lessonId.replace(/-/g, "").padEnd(64, "0");
+}
+
+// 컨트랙트 함수 호출 헬퍼 (value 없는 상태 변경용)
+export async function callEscrow(contractAddr: string, fnName: string, lessonId: string): Promise<string> {
+  const eth = (window as unknown as { ethereum?: unknown }).ethereum;
+  if (!eth) throw new Error("MetaMask가 필요합니다. metamask.io에서 설치해주세요.");
+
+  const { BrowserProvider, Interface } = await import("ethers");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const provider = new BrowserProvider(eth as any);
+  const connected = await provider.send("eth_accounts", []) as string[];
+  if (!connected.length) await provider.send("eth_requestAccounts", []);
+  await switchToSepolia();
+
+  const signer = await provider.getSigner();
+  const iface = new Interface(ESCROW_ABI);
+  const calldata = iface.encodeFunctionData(fnName, [lessonIdToBytes32(lessonId)]);
+  const tx = await signer.sendTransaction({ to: contractAddr, data: calldata });
+  const receipt = await tx.wait();
+  return receipt?.hash ?? tx.hash;
+}
+
 export function parseEthToWei(eth: string): bigint {
   const [whole, frac = ""] = eth.split(".");
   const fracPadded = frac.padEnd(18, "0").slice(0, 18);
