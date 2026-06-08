@@ -88,8 +88,7 @@ export default function TopNav() {
 
   const baseLinks = () => {
     if (me?.role === "coach") return [
-      { label: "대시보드",  href: "/dashboard/coach",          exact: true  },
-      { label: "강의 관리", href: "/dashboard/coach/lectures",  exact: false },
+      { label: "대시보드", href: "/dashboard/coach", exact: true },
     ];
     if (me?.role === "student") return [
       { label: "내 수업",  href: "/dashboard/student", exact: true  },
