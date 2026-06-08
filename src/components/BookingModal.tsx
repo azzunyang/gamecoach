@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Icon from "./Icon";
+import { switchToSepolia, ESCROW_ABI } from "@/lib/web3";
 
 const GAME_GRAD: Record<string, [string, string]> = {
   'Valorant': ['#2A1216','#5A1E27'],
@@ -50,6 +51,8 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
   const [time, setTime] = useState<string>("");
   const [goal, setGoal] = useState("");
   const [errMsg, setErrMsg] = useState("");
+  const [stepMsg, setStepMsg] = useState("");
+  const [finalTxHash, setFinalTxHash] = useState("");
 
   const { cells, year, month, today } = getCalendarDays();
   const g = GAME_GRAD[coach.game] ?? ['#1a1a2e','#16213e'];
@@ -64,7 +67,56 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
     if (!day || !time) return;
     setStage("submitting");
     setErrMsg("");
+    setFinalTxHash("");
+
+    let txHash: string | undefined;
+    let contractAddr: string | undefined;
+
     try {
+      const configuredContract = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+
+      if (configuredContract) {
+        contractAddr = configuredContract;
+
+        // 1. 코치 지갑 주소 조회
+        setStepMsg("코치 정보 확인 중...");
+        const coachRes = await fetch(`/api/coaches/${coach.id}`);
+        const coachJson = await coachRes.json() as { coach?: { wallet?: string } };
+        const coachWallet = coachJson.coach?.wallet;
+        if (!coachWallet) throw new Error("코치 지갑 주소를 찾을 수 없습니다");
+
+        // 2. MetaMask 연결
+        setStepMsg("MetaMask 연결 중...");
+        const eth = (window as unknown as { ethereum?: unknown }).ethereum;
+        if (!eth) throw new Error("MetaMask가 필요합니다. metamask.io에서 설치해주세요.");
+
+        const { BrowserProvider, Contract, parseEther } = await import("ethers");
+        const provider = new BrowserProvider(eth as Parameters<typeof BrowserProvider>[0]);
+        await provider.send("eth_requestAccounts", []);
+        await switchToSepolia();
+
+        // 3. 컨트랙트 호출 (예약금 30% 전송)
+        setStepMsg("MetaMask에서 결제를 승인해주세요...");
+        const signer = await provider.getSigner();
+        const contract = new Contract(configuredContract, ESCROW_ABI, signer);
+
+        const rawId = crypto.randomUUID().replace(/-/g, "");
+        const lessonIdBytes32 = "0x" + rawId.padEnd(64, "0");
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const tx = await (contract.requestLesson as any)(lessonIdBytes32, coachWallet, {
+          value: parseEther(deposit),
+        });
+
+        // 4. 트랜잭션 확정 대기
+        setStepMsg("블록체인 확정 대기 중... (약 15~30초)");
+        const receipt = await tx.wait();
+        txHash = receipt.hash as string;
+        setFinalTxHash(txHash);
+      }
+
+      // 5. DB 저장
+      setStepMsg("신청 정보 저장 중...");
       const res = await fetch("/api/lessons", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -75,20 +127,21 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
           goal: goal.trim() || undefined,
           depositEth: deposit,
           balanceEth: balance,
+          txHash,
+          contractAddr,
         }),
       });
       if (!res.ok) {
         let msg = "신청 실패";
-        try {
-          const d = await res.json() as { error?: string };
-          msg = d.error ?? msg;
-        } catch { /* non-JSON 응답 */ }
+        try { const d = await res.json() as { error?: string }; msg = d.error ?? msg; } catch { /* */ }
         if (res.status === 401) msg = "로그인이 필요합니다";
         throw new Error(msg);
       }
       setStage("done");
     } catch (e) {
-      setErrMsg((e as Error).message);
+      const err = e as Error & { code?: number };
+      const msg = err.code === 4001 ? "MetaMask에서 트랜잭션이 거부되었습니다" : err.message;
+      setErrMsg(msg);
       setStage("error");
     }
   };
@@ -220,6 +273,7 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
             <div className="col center gap-16" style={{ padding:"40px 0", textAlign:"center" }}>
               <div className="spin" style={{ width:40, height:40, borderWidth:3 }} />
               <div style={{ fontWeight:700 }}>신청 처리 중...</div>
+              {stepMsg && <div style={{ fontSize:13, color:"var(--muted)" }}>{stepMsg}</div>}
             </div>
           )}
 
@@ -238,6 +292,16 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
                 <Icon name="check" size={13} style={{ display:"inline", marginRight:5, color:"var(--success)" }} />
                 코치의 수락을 기다리고 있어요. 승인 후 채팅이 활성화됩니다.
               </div>
+              {finalTxHash && (
+                <a
+                  href={`https://sepolia.etherscan.io/tx/${finalTxHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize:12, color:"var(--muted)", wordBreak:"break-all", textDecoration:"underline" }}
+                >
+                  Tx: {finalTxHash.slice(0,10)}...{finalTxHash.slice(-8)}
+                </a>
+              )}
               <button className="btn btn-primary btn-lg btn-block" onClick={handleDone}>
                 확인
               </button>

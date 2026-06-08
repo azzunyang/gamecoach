@@ -57,19 +57,19 @@ export async function switchToSepolia(): Promise<void> {
   }
 }
 
-// ABI fragment — only the functions our UI calls
+// ABI — GameCoachEscrow.sol 실제 시그니처와 일치
 export const ESCROW_ABI = [
-  "function requestLesson(address _coach) external payable",
-  "function acceptLesson(uint256 lessonId) external",
-  "function rejectLesson(uint256 lessonId) external",
-  "function cancelLesson(uint256 lessonId) external",
-  "function payBalance(uint256 lessonId) external payable",
-  "function confirmCompletion(uint256 lessonId) external",
-  "function requestDispute(uint256 lessonId) external",
-  "function resolveDispute(uint256 lessonId, address winner) external",
-  "event LessonRequested(uint256 indexed lessonId, address indexed student, address indexed coach, uint256 deposit)",
-  "event LessonAccepted(uint256 indexed lessonId)",
-  "event LessonCompleted(uint256 indexed lessonId)",
+  "function requestLesson(bytes32 id, address coach) external payable",
+  "function acceptLesson(bytes32 id) external",
+  "function rejectLesson(bytes32 id) external",
+  "function cancelLesson(bytes32 id) external",
+  "function payBalance(bytes32 id) external payable",
+  "function confirmCompletion(bytes32 id) external",
+  "function requestDispute(bytes32 id) external",
+  "function resolveDispute(bytes32 id, address winner) external",
+  "event LessonRequested(bytes32 indexed id, address indexed student, address indexed coach, uint256 deposit)",
+  "event LessonAccepted(bytes32 indexed id)",
+  "event LessonCompleted(bytes32 indexed id)",
 ];
 
 export function parseEthToWei(eth: string): bigint {
