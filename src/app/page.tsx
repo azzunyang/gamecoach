@@ -49,11 +49,13 @@ const TRUST = [
   { icon:'star',      title:'투명한 리뷰',             desc:'수업 완료 학생만 남길 수 있는 익명 검증 리뷰입니다.' },
 ];
 
-const STEPS = [
-  { icon:'compass',  n:'01', title:'코치 탐색',  desc:'게임·티어·가격으로 딱 맞는 코치를 찾아요.' },
-  { icon:'calendar', n:'02', title:'슬롯 신청',  desc:'원하는 날짜를 고르고 예약금 30%만 먼저 결제해요.' },
-  { icon:'video',    n:'03', title:'1:1 수업',   desc:'Discord 음성+화면 공유로 실시간 1:1 코칭을 받아요.' },
-  { icon:'check',    n:'04', title:'완료 & 정산', desc:'수업 완료 후 리뷰를 남기면 잔금이 코치에게 전달돼요.' },
+const POPULAR_LECTURES = [
+  { id:'p1', title:'발로란트 에임 집중 코칭', game:'Valorant',          level:'중급', price:'0.04', duration:60, coach:'AimGod_K',    rating:4.9, reviews:127 },
+  { id:'p2', title:'LoL 정글 동선 완전 마스터', game:'League of Legends', level:'고급', price:'0.05', duration:60, coach:'DragonKing',  rating:4.9, reviews:98  },
+  { id:'p3', title:'CS2 AWP 포지셔닝 심화',   game:'CS2',               level:'고급', price:'0.05', duration:60, coach:'HeadshotPro', rating:4.8, reviews:83  },
+  { id:'p4', title:'오버워치2 힐러 포지셔닝',  game:'Overwatch 2',       level:'중급', price:'0.04', duration:60, coach:'FrostQueen',  rating:4.9, reviews:64  },
+  { id:'p5', title:'TFT 메타 덱 경제 완전 정복', game:'TFT',             level:'입문', price:'0.03', duration:60, coach:'tig3r_strat', rating:4.7, reviews:51  },
+  { id:'p6', title:'PUBG 자기장 운영 & 교전',  game:'PUBG',              level:'중급', price:'0.04', duration:90, coach:'VoidWalker',  rating:4.6, reviews:39  },
 ];
 
 /* ── 썸네일 배너 ── */
@@ -309,7 +311,41 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── 신뢰 포인트 (아이보리 배경, 컴팩트) ── */}
+        {/* ── 인기있는 강의 ── */}
+        <section style={{ padding:'72px 0', background:'var(--surface)' }}>
+          <div className="container">
+            <div className="row spread" style={{ marginBottom:32, alignItems:'flex-end' }}>
+              <div>
+                <p className="eyebrow" style={{ marginBottom:6 }}>인기 강의</p>
+                <h2 className="h2">인기있는 강의</h2>
+              </div>
+              <Link href="/coaches" className="btn btn-outline btn-sm">전체 보기</Link>
+            </div>
+            <div className="grid grid-3 gap-16">
+              {POPULAR_LECTURES.map((l) => (
+                <Link key={l.id} href="/coaches" style={{ textDecoration:'none' }}>
+                  <div className="card hover-lift" style={{ overflow:'hidden', cursor:'pointer', borderRadius:'var(--r)' }}>
+                    <LectureThumbnail
+                      game={l.game}
+                      title={l.title}
+                      coachName={l.coach}
+                      level={l.level}
+                      price={l.price}
+                      duration={l.duration}
+                    />
+                    <div className="row gap-6" style={{ padding:'10px 14px' }}>
+                      <Icon name="star" size={13} fill style={{ color:'#F5A623' }} />
+                      <span style={{ fontSize:13, fontWeight:700 }}>{l.rating}</span>
+                      <span style={{ fontSize:12, color:'var(--muted)' }}>({l.reviews}개 후기)</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ── 신뢰 포인트 ── */}
         <section style={{ padding:'52px 0', background:'var(--sunken)', borderTop:'1px solid var(--line)', borderBottom:'1px solid var(--line)' }}>
           <div className="container">
             <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:0 }}>
@@ -326,29 +362,6 @@ export default function LandingPage() {
                     <div style={{ fontWeight:800, fontSize:14, color:'var(--ink)', marginBottom:4 }}>{t.title}</div>
                     <p style={{ fontSize:12.5, color:'var(--muted)', lineHeight:1.6 }}>{t.desc}</p>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── 이용 방법 (맨 아래) ── */}
-        <section style={{ padding:'80px 0', background:'var(--surface)' }}>
-          <div className="container">
-            <div style={{ textAlign:'center', marginBottom:48 }}>
-              <p className="eyebrow" style={{ marginBottom:8 }}>How it works</p>
-              <h2 className="h2">4단계로 끝나는 1:1 코칭</h2>
-              <p className="sub" style={{ marginTop:10, fontSize:14.5 }}>예약금 30% 선납 · 잔액은 코치 수락 후</p>
-            </div>
-            <div className="grid grid-4 gap-20">
-              {STEPS.map((s) => (
-                <div key={s.title} className="card card-pad" style={{ textAlign:'center', position:'relative' }}>
-                  <div style={{ display:'inline-flex', width:52, height:52, borderRadius:'var(--r)', background:'var(--ink)', alignItems:'center', justifyContent:'center', marginBottom:16, color:'var(--accent)' }}>
-                    <Icon name={s.icon as "compass"} size={24} />
-                  </div>
-                  <div style={{ position:'absolute', top:20, right:20, fontFamily:'var(--mono)', fontSize:12, fontWeight:800, color:'var(--faint)' }}>{s.n}</div>
-                  <div style={{ fontWeight:800, fontSize:15.5, marginBottom:8 }}>{s.title}</div>
-                  <p style={{ fontSize:13, color:'var(--muted)', lineHeight:1.55 }}>{s.desc}</p>
                 </div>
               ))}
             </div>
