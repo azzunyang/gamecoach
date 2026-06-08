@@ -91,7 +91,8 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
         if (!eth) throw new Error("MetaMask가 필요합니다. metamask.io에서 설치해주세요.");
 
         const { BrowserProvider, Contract, parseEther } = await import("ethers");
-        const provider = new BrowserProvider(eth as Parameters<typeof BrowserProvider>[0]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const provider = new BrowserProvider(eth as any);
         await provider.send("eth_requestAccounts", []);
         await switchToSepolia();
 
