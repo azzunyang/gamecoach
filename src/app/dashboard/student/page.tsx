@@ -58,19 +58,35 @@ export default function StudentDashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const loadLessons = () => {
+    fetch("/api/lessons")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => { const d = data as { lessons?: Lesson[] } | null; if (d?.lessons) setLessons(d.lessons); })
+      .catch(() => {});
+  };
+
+  const completeLesson = async (id: string) => {
+    if (!confirm("수업 완료를 확인하시겠습니까?\n확인 즉시 코치에게 수업료가 전송됩니다.")) return;
+    const res = await fetch(`/api/lessons/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "COMPLETED" }),
+    });
+    if (res.ok) loadLessons();
+    else alert("처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+  };
+
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.ok ? r.json() : null)
       .then((d) => { const m = d as Me | null; if (m?.id) setMe(m); })
       .catch(() => {});
-    fetch("/api/lessons")
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => { const d = data as { lessons?: Lesson[] } | null; if (d?.lessons) setLessons(d.lessons); })
-      .catch(() => {});
+    loadLessons();
     fetch("/api/wishlist/lectures")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => { const d = data as { lectures?: LectureWishlist[] } | null; if (d?.lectures) setLectureWishlist(d.lectures); })
       .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDeleteAccount = async () => {
@@ -158,10 +174,22 @@ export default function StudentDashboard() {
                           {l.game} · {l.slot} · {l.session}분
                         </div>
                       </div>
-                      <div style={{ textAlign:'right' }}>
+                      <div className="col gap-6" style={{ alignItems:'flex-end' }}>
                         <div className="eth-amt" style={{ fontSize:14 }}>{l.price} ETH</div>
-                        {l.state === 'ACCEPTED' && (
-                          <Link href={`/chat/${l.id}`} className="btn btn-outline btn-xs" style={{ marginTop:4 }}>채팅</Link>
+                        {(l.state === 'ACCEPTED' || l.state === 'ACTIVE') && (
+                          <Link href={`/chat/${l.id}`} className="btn btn-outline btn-xs">
+                            <Icon name="chat" size={11} />
+                            채팅
+                          </Link>
+                        )}
+                        {l.state === 'ACTIVE' && (
+                          <button
+                            className="btn btn-accent btn-xs"
+                            onClick={() => completeLesson(l.id)}
+                          >
+                            <Icon name="check" size={11} />
+                            수업 완료
+                          </button>
                         )}
                       </div>
                       <Icon name="chevR" size={16} style={{ color:'var(--faint)' }} />
