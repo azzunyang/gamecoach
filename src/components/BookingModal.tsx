@@ -91,7 +91,7 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
         const eth = (window as unknown as { ethereum?: unknown }).ethereum;
         if (!eth) throw new Error("MetaMask가 필요합니다. metamask.io에서 설치해주세요.");
 
-        const { BrowserProvider, Interface, parseEther } = await import("ethers");
+        const { BrowserProvider, Interface } = await import("ethers");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const provider = new BrowserProvider(eth as any);
 
@@ -110,13 +110,21 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
         // DB UUID와 동일한 ID를 컨트랙트에도 사용 (수락/거절/완료 시 bytes32로 변환해 재사용)
         clientLessonId = crypto.randomUUID();
         const lessonIdBytes32 = "0x" + clientLessonId.replace(/-/g, "").padEnd(64, "0");
-        const depositWei = parseEther(deposit);
+
+        // parseEther 대신 직접 wei 계산 (0n 전달 방지)
+        const depositNum = parseFloat(deposit);
+        if (!depositNum || depositNum <= 0) {
+          throw new Error(`강의 수강료가 0 ETH입니다. 강의 가격(${coach.price} ETH)을 확인해주세요.`);
+        }
+        const [whole, frac = ""] = deposit.split(".");
+        const depositWei = BigInt(whole) * BigInt(10 ** 18) + BigInt(frac.padEnd(18, "0").slice(0, 18));
+        const valueHex = "0x" + depositWei.toString(16); // hex string으로 명시 전달
 
         const calldata = iface.encodeFunctionData("requestLesson", [lessonIdBytes32, coachWallet]);
         const tx = await signer.sendTransaction({
           to: configuredContract,
           data: calldata,
-          value: depositWei,
+          value: valueHex,
         });
 
         // 4. 트랜잭션 확정 대기
