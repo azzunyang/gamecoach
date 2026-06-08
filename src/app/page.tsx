@@ -234,48 +234,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ── 카테고리 ── */}
-        <section style={{ padding:'64px 0', background:'var(--surface)' }}>
-          <div className="container">
-            <div className="row spread" style={{ marginBottom:28, alignItems:'center' }}>
-              <div>
-                <p className="eyebrow" style={{ marginBottom:5 }}>카테고리</p>
-                <h2 className="h2" style={{ fontSize:22 }}>어떤 게임을 배우고 싶으세요?</h2>
-              </div>
-              <Link href="/coaches" className="btn btn-outline btn-sm">전체 보기</Link>
-            </div>
-            <div className="grid grid-3 gap-12">
-              {CATEGORIES.map((cat) => (
-                <Link
-                  key={cat.id}
-                  href={`/coaches?cat=${cat.id}`}
-                  style={{ display:'flex', alignItems:'center', gap:14, textDecoration:'none',
-                    padding:'14px 16px', borderRadius:'var(--r)',
-                    border:'1px solid var(--line)', background:'var(--paper)',
-                    transition:'border-color .15s, background .15s',
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)'; (e.currentTarget as HTMLElement).style.background = 'var(--accent-tint)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--line)'; (e.currentTarget as HTMLElement).style.background = 'var(--paper)'; }}
-                >
-                  <div style={{
-                    width:44, height:44, borderRadius:12,
-                    background:'var(--sunken)',
-                    display:'flex', alignItems:'center', justifyContent:'center',
-                    fontSize:20, flexShrink:0, color:'var(--ink)',
-                  }}>
-                    {cat.glyph}
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontWeight:800, fontSize:14.5, color:'var(--ink)' }}>{cat.name}</div>
-                    <div style={{ fontSize:11.5, color:'var(--muted)', marginTop:1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{cat.games.slice(0,2).join(' · ')}</div>
-                  </div>
-                  <span style={{ fontSize:12, fontWeight:700, color:'var(--muted)', whiteSpace:'nowrap' }}>{cat.count}명</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* ── 추천 강의 ── */}
         <section style={{ padding:'72px 0', background:'var(--paper)' }}>
           <div className="container">
