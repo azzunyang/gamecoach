@@ -176,7 +176,7 @@ function CoachDashboardContent() {
 
         {/* Dashboard tab */}
         {tab === 'dashboard' && (
-          <div className="grid-2 gap-20">
+          <div className="grid-2 gap-20" style={{ alignItems:'start' }}>
             {/* Pending requests */}
             <div>
               <h2 className="h3" style={{ marginBottom:16 }}>
@@ -188,8 +188,8 @@ function CoachDashboardContent() {
                 )}
               </h2>
               {requests.length === 0 ? (
-                <div className="card card-pad" style={{ textAlign:'center', color:'var(--muted)', padding:'40px 20px' }}>
-                  <Icon name="check" size={28} style={{ margin:'0 auto 12px', display:'block', color:'var(--success)' }} />
+                <div className="card card-pad" style={{ textAlign:'center', color:'var(--muted)' }}>
+                  <Icon name="check" size={24} style={{ margin:'0 auto 10px', display:'block', color:'var(--success)' }} />
                   <div style={{ fontWeight:700 }}>모든 요청을 처리했어요</div>
                 </div>
               ) : (
@@ -197,7 +197,7 @@ function CoachDashboardContent() {
                   {requests.map((req) => (
                     <div key={req.id} className="card card-pad">
                       <div className="row gap-10" style={{ marginBottom:12 }}>
-                        <Avatar name={req.student_nickname || '수강생'} idx={0} size={36} />
+                        <Avatar name={req.student_nickname || '수강생'} idx={0} size={40} />
                         <div style={{ flex:1 }}>
                           <div style={{ fontWeight:700 }}>{req.student_nickname || '수강생'}</div>
                           <div style={{ fontSize:12, color:'var(--muted)' }}>{req.game_category} · {new Date(req.created_at * 1000).toLocaleDateString('ko')}</div>
@@ -221,7 +221,7 @@ function CoachDashboardContent() {
             <div>
               <h2 className="h3" style={{ marginBottom:16 }}>수락된 수업</h2>
               {upcoming.length === 0 ? (
-                <div className="card card-pad" style={{ textAlign:'center', color:'var(--muted)', padding:'40px 20px' }}>
+                <div className="card card-pad" style={{ textAlign:'center', color:'var(--muted)' }}>
                   <div style={{ fontWeight:700 }}>예정된 수업이 없어요</div>
                 </div>
               ) : (
