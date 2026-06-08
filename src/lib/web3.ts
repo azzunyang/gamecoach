@@ -92,7 +92,7 @@ export async function callEscrow(contractAddr: string, fnName: string, lessonId:
   const signer = await provider.getSigner();
   const iface = new Interface(ESCROW_ABI);
   const calldata = iface.encodeFunctionData(fnName, [lessonIdToBytes32(lessonId)]);
-  const tx = await signer.sendTransaction({ to: contractAddr, data: calldata });
+  const tx = await signer.sendTransaction({ to: contractAddr, data: calldata, gasLimit: 100000 });
   const receipt = await tx.wait();
   return receipt?.hash ?? tx.hash;
 }

@@ -121,10 +121,12 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
         const valueHex = "0x" + depositWei.toString(16); // hex string으로 명시 전달
 
         const calldata = iface.encodeFunctionData("requestLesson", [lessonIdBytes32, coachWallet]);
+        // gasLimit 직접 지정 → estimateGas 호출 생략 (estimateGas 실패 우회)
         const tx = await signer.sendTransaction({
           to: configuredContract,
           data: calldata,
           value: valueHex,
+          gasLimit: 200000,
         });
 
         // 4. 트랜잭션 확정 대기
