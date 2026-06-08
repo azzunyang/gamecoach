@@ -291,8 +291,8 @@ function CoachDashboardContent() {
                   </div>
                 </div>
                 <div className="row gap-8">
-                  <button className="btn btn-danger btn-sm" onClick={() => rejectReq(req.id)}>거절</button>
-                  <button className="btn btn-accent btn-sm" onClick={() => acceptReq(req.id)}>
+                  <button className="btn btn-danger btn-sm" onClick={() => rejectReq(req.id, req.contract_addr)}>거절</button>
+                  <button className="btn btn-accent btn-sm" onClick={() => acceptReq(req.id, req.contract_addr)}>
                     <Icon name="check" size={13} />
                     수락
                   </button>
