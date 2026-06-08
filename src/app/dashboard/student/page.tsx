@@ -182,7 +182,7 @@ export default function StudentDashboard() {
                             채팅
                           </Link>
                         )}
-                        {l.state === 'ACTIVE' && (
+                        {(l.state === 'ACCEPTED' || l.state === 'ACTIVE') && (
                           <button
                             className="btn btn-accent btn-xs"
                             onClick={() => completeLesson(l.id)}

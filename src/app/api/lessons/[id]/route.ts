@@ -15,7 +15,7 @@ const VALID_TRANSITIONS: Record<string, { from: LessonState[]; role: "coach" | "
   ACCEPTED:   { from: ["PENDING"],   role: "coach" },
   REJECTED:   { from: ["PENDING"],   role: "coach" },
   ACTIVE:     { from: ["ACCEPTED"],  role: "student" },  // student pays balance
-  COMPLETED:  { from: ["ACTIVE"],    role: "student" },
+  COMPLETED:  { from: ["ACTIVE", "ACCEPTED"],    role: "student" },
   CANCELLED:  { from: ["PENDING", "ACCEPTED"], role: "any" },
   DISPUTED:   { from: ["ACTIVE"],    role: "student" },
 };
