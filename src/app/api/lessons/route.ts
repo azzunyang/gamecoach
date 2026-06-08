@@ -20,12 +20,10 @@ export async function GET(req: NextRequest) {
   const field = session.role === "coach" ? "coach_id" : "student_id";
   const lessons = await d1.prepare(
     `SELECT l.*,
-      cu.nickname AS coach,
-      su.nickname AS student,
-      c.game_category AS game,
+      cu.nickname AS coach_nickname,
+      su.nickname AS student_nickname,
+      c.game_category,
       c.session_min  AS session,
-      0              AS coachAvi,
-      0              AS studentAvi,
       COALESCE(s.date || ' ' || s.start_time, '') AS slot,
       (CAST(l.deposit_eth AS REAL) + CAST(l.balance_eth AS REAL)) AS price
      FROM lessons l

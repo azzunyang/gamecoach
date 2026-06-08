@@ -69,7 +69,7 @@ function CoachDashboardContent() {
     await fetch(`/api/lessons/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state: "ACCEPTED" }),
+      body: JSON.stringify({ action: "ACCEPTED" }),
     });
     loadLessons();
   };
@@ -78,7 +78,7 @@ function CoachDashboardContent() {
     await fetch(`/api/lessons/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state: "REJECTED" }),
+      body: JSON.stringify({ action: "REJECTED" }),
     });
     loadLessons();
   };
