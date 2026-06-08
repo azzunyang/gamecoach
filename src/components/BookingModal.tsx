@@ -93,7 +93,12 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
         const { BrowserProvider, Contract, parseEther } = await import("ethers");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const provider = new BrowserProvider(eth as any);
-        await provider.send("eth_requestAccounts", []);
+
+        // 이미 연결된 계정이 없을 때만 연결 요청 (재시도 시 -32002 방지)
+        const connected = await provider.send("eth_accounts", []) as string[];
+        if (!connected.length) {
+          await provider.send("eth_requestAccounts", []);
+        }
         await switchToSepolia();
 
         // 3. 컨트랙트 호출 (예약금 30% 전송)
@@ -140,8 +145,12 @@ export default function BookingModal({ coach, onClose, onBooked }: BookingModalP
       }
       setStage("done");
     } catch (e) {
-      const err = e as Error & { code?: number };
-      const msg = err.code === 4001 ? "MetaMask에서 트랜잭션이 거부되었습니다" : err.message;
+      const err = e as Error & { code?: number; reason?: string };
+      let msg = err.message ?? "알 수 없는 오류가 발생했습니다";
+      if (err.code === 4001)   msg = "MetaMask에서 트랜잭션을 거부했습니다. 다시 시도해주세요.";
+      if (err.code === -32002) msg = "MetaMask에 대기 중인 요청이 있습니다. MetaMask를 열어 확인해주세요.";
+      if (err.code === -32603) msg = "잔액이 부족합니다. Sepolia ETH를 충전해주세요.";
+      if (err.reason)          msg = err.reason;
       setErrMsg(msg);
       setStage("error");
     }
