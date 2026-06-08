@@ -6,7 +6,6 @@ import BottomNav from "@/components/BottomNav";
 import Icon from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 import LectureThumbnail from "@/components/LectureThumbnail";
-import BookingModal from "@/components/BookingModal";
 
 const GAME_GRAD: Record<string, [string, string]> = {
   'Valorant':          ['#2A1216','#5A1E27'],
@@ -74,17 +73,19 @@ function CoachThumb({ game, h = 160, glyph }: { game: string; h?: number; glyph?
 }
 
 /* ── 강의 썸네일 카드 (모크 폴백) ── */
-function LessonCard({ l, onBook }: { l: typeof LESSONS[0]; onBook: () => void }) {
+function LessonCard({ l }: { l: typeof LESSONS[0] }) {
   return (
-    <div className="card hover-lift" style={{ overflow:'hidden', cursor:'pointer' }} onClick={onBook}>
-      <LectureThumbnail
-        game={l.game}
-        title={l.title}
-        coachName={l.coach}
-        price={String(l.price)}
-        duration={l.duration}
-      />
-    </div>
+    <Link href={`/coaches/${l.coachId}`} style={{ textDecoration:'none' }}>
+      <div className="card hover-lift" style={{ overflow:'hidden', cursor:'pointer' }}>
+        <LectureThumbnail
+          game={l.game}
+          title={l.title}
+          coachName={l.coach}
+          price={String(l.price)}
+          duration={l.duration}
+        />
+      </div>
+    </Link>
   );
 }
 
@@ -138,7 +139,6 @@ interface ApiLecture {
 
 export default function LandingPage() {
   const [apiLectures, setApiLectures] = useState<ApiLecture[]>([]);
-  const [bookingTarget, setBookingTarget] = useState<ApiLecture | null>(null);
 
   useEffect(() => {
     fetch("/api/lectures?page=1")
@@ -287,33 +287,20 @@ export default function LandingPage() {
             <div className="grid grid-3 gap-16">
               {apiLectures.length > 0
                 ? apiLectures.map((l) => (
-                    <div
-                      key={l.id}
-                      className="card hover-lift"
-                      style={{ overflow:'hidden', cursor:'pointer', borderRadius:'var(--r)' }}
-                      onClick={() => setBookingTarget(l)}
-                    >
-                      <LectureThumbnail
-                        game={l.game}
-                        title={l.title}
-                        coachName={l.coach_nickname}
-                        level={l.level}
-                        price={l.price_eth}
-                        duration={l.duration}
-                      />
-                    </div>
+                    <Link key={l.id} href={`/lectures/${l.id}`} style={{ textDecoration:'none' }}>
+                      <div className="card hover-lift" style={{ overflow:'hidden', cursor:'pointer', borderRadius:'var(--r)' }}>
+                        <LectureThumbnail
+                          game={l.game}
+                          title={l.title}
+                          coachName={l.coach_nickname}
+                          level={l.level}
+                          price={l.price_eth}
+                          duration={l.duration}
+                        />
+                      </div>
+                    </Link>
                   ))
-                : LESSONS.map((l) => (
-                    <LessonCard
-                      key={l.id}
-                      l={l}
-                      onBook={() => setBookingTarget({
-                        id: l.id, title: l.title, game: l.game, game_category: '',
-                        price_eth: String(l.price), duration: l.duration, level: '',
-                        coach_id: l.coachId, coach_nickname: l.coach,
-                      })}
-                    />
-                  ))
+                : LESSONS.map((l) => <LessonCard key={l.id} l={l} />)
               }
             </div>
             {apiLectures.length === 0 && (
@@ -386,20 +373,6 @@ export default function LandingPage() {
         </footer>
       </main>
       <BottomNav />
-      {bookingTarget && (
-        <BookingModal
-          coach={{
-            id: bookingTarget.coach_id,
-            name: bookingTarget.coach_nickname,
-            game: bookingTarget.game,
-            session: bookingTarget.duration,
-            price: parseFloat(bookingTarget.price_eth),
-            avi: 0,
-          }}
-          onClose={() => setBookingTarget(null)}
-          onBooked={() => setBookingTarget(null)}
-        />
-      )}
     </>
   );
 }
